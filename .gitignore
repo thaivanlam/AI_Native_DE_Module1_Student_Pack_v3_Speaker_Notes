@@ -1,0 +1,51 @@
+# ---------- Secrets / environment ----------
+.env
+.env.*
+!.env.example
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# ---------- Virtual environments ----------
+.venv/
+venv/
+env/
+
+# ---------- Logs (giữ lại .gitkeep) ----------
+logs/*
+!logs/.gitkeep
+*.log
+
+# ---------- Data (giữ lại .gitkeep) ----------
+data/raw/*
+!data/raw/.gitkeep
+data/reject/*
+!data/reject/.gitkeep
+
+# ---------- PostgreSQL ----------
+pgdata/
+postgres-data/
+*.dump
+*.backup
+*.pgpass
+.pgpass
+
+# ---------- IDE / OS ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,116 @@
+Table "core"."categories" {
+  "category_id" varchar(10) [pk, not null]
+  "category_name" varchar(120) [not null]
+  "parent_category_id" varchar(10)
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+}
+
+Table "core"."customers" {
+  "customer_id" varchar(12) [pk, not null]
+  "full_name" varchar(150) [not null]
+  "email" varchar(200) [unique, not null]
+  "phone" varchar(30)
+  "city" varchar(100)
+  "customer_segment" varchar(30) [not null]
+  "status" varchar(20) [not null, check: `(status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])`]
+  "source_system" varchar(50) [not null, default: 'unknown']
+  "ingested_at" timestamptz [not null, default: `now()`]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+}
+
+Table "core"."products" {
+  "product_id" varchar(12) [pk, not null]
+  "category_id" varchar(10) [not null]
+  "product_name" varchar(200) [not null]
+  "unit_price" numeric(14,2) [not null, check: `unit_price >= (0)::numeric`]
+  "cost_price" numeric(14,2) [not null, check: `cost_price >= (0)::numeric`]
+  "status" varchar(20) [not null, check: `(status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying, 'discontinued'::character varying])::text[])`]
+  "source_system" varchar(50) [not null, default: 'unknown']
+  "ingested_at" timestamptz [not null, default: `now()`]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+}
+
+Table "core"."order_status" {
+  "order_status" varchar(20) [pk, not null, check: `(order_status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'shipped'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])`]
+  "status_name" varchar(50) [not null]
+  "status_order" int4 [not null, check: `status_order > 0`]
+  "is_final" bool [not null, default: false]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+}
+
+Table "core"."orders" {
+  "order_id" varchar(12) [pk, not null]
+  "customer_id" varchar(12) [not null]
+  "order_date" timestamptz [not null]
+  "order_status" varchar(20) [not null]
+  "shipping_city" varchar(100)
+  "channel" varchar(20) [not null, check: `(channel)::text = ANY ((ARRAY['web'::character varying, 'mobile_app'::character varying, 'social'::character varying])::text[])`]
+  "order_total" numeric(14,2) [not null, check: `order_total >= (0)::numeric`]
+  "source_system" varchar(50) [not null, default: 'unknown']
+  "ingested_at" timestamptz [not null, default: `now()`]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+
+  Indexes {
+    customer_id [type: btree, name: "idx_orders_customer"]
+    order_date [type: btree, name: "idx_orders_date"]
+    order_status [type: btree, name: "idx_orders_status"]
+  }
+}
+
+Table "core"."order_items" {
+  "order_item_id" varchar(16) [pk, not null]
+  "order_id" varchar(12) [not null]
+  "product_id" varchar(12) [not null]
+  "quantity" int4 [not null, check: `quantity > 0`]
+  "unit_price" numeric(14,2) [not null, check: `unit_price >= (0)::numeric`]
+  "discount_amount" numeric(14,2) [not null, check: `discount_amount >= (0)::numeric`, default: 0]
+  "source_system" varchar(50) [not null, default: 'unknown']
+  "ingested_at" timestamptz [not null, default: `now()`]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+
+  Checks {
+    `discount_amount <= (unit_price * (quantity)::numeric)` [name: 'order_items_check']
+  }
+
+  Indexes {
+    order_id [type: btree, name: "idx_order_items_order"]
+    product_id [type: btree, name: "idx_order_items_product"]
+  }
+}
+
+Table "core"."payments" {
+  "payment_id" varchar(12) [pk, not null]
+  "order_id" varchar(12) [not null]
+  "payment_date" timestamptz [not null]
+  "payment_method" varchar(30) [not null, check: `(payment_method)::text = ANY ((ARRAY['cash'::character varying, 'bank_transfer'::character varying, 'card'::character varying, 'e_wallet'::character varying])::text[])`]
+  "payment_status" varchar(20) [not null, check: `(payment_status)::text = ANY ((ARRAY['pending'::character varying, 'success'::character varying, 'failed'::character varying, 'refunded'::character varying])::text[])`]
+  "amount" numeric(14,2) [not null, check: `amount >= (0)::numeric`]
+  "source_system" varchar(50) [not null, default: 'unknown']
+  "ingested_at" timestamptz [not null, default: `now()`]
+  "created_at" timestamptz [not null]
+  "updated_at" timestamptz [not null]
+
+  Indexes {
+    order_id [type: btree, name: "idx_payments_order"]
+  }
+}
+
+Ref "categories_parent_category_id_fkey":"core"."categories"."category_id" ?<? "core"."categories"."parent_category_id"
+
+Ref "order_items_order_id_fkey":"core"."orders"."order_id" <? "core"."order_items"."order_id" [delete: cascade]
+
+Ref "order_items_product_id_fkey":"core"."products"."product_id" <? "core"."order_items"."product_id"
+
+Ref "orders_customer_id_fkey":"core"."customers"."customer_id" <? "core"."orders"."customer_id"
+
+Ref "orders_order_status_fkey":"core"."order_status"."order_status" < "core"."orders"."order_status"
+
+Ref "payments_order_id_fkey":"core"."orders"."order_id" <? "core"."payments"."order_id"
+
+Ref "products_category_id_fkey":"core"."categories"."category_id" <? "core"."products"."category_id"

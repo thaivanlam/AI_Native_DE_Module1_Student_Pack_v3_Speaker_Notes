@@ -1,0 +1,6 @@
+order_status,status_name,status_order,is_final,created_at,updated_at
+pending,Pending,1,false,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+confirmed,Confirmed,2,false,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+shipped,Shipped,3,false,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+completed,Completed,4,true,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+cancelled,Cancelled,5,true,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
