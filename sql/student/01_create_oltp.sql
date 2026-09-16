@@ -110,3 +110,52 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+
+-- =====================================================================
+-- Session 01 Bonus: Advanced Schema (CHECK constraints + DEFAULT audit)
+-- Idempotent: DROP ... IF EXISTS truoc khi ADD de chay lai nhieu lan khong loi
+-- =====================================================================
+
+-- 1) CHECK constraints cho quy tac business
+-- orders: ngay dat hang khong duoc o tuong lai
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS check_order_date;
+ALTER TABLE orders ADD CONSTRAINT check_order_date
+  CHECK (order_date IS NULL OR order_date <= NOW());
+
+-- orders: updated_at khong duoc truoc created_at
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS check_orders_audit_ts;
+ALTER TABLE orders ADD CONSTRAINT check_orders_audit_ts
+  CHECK (updated_at >= created_at);
+
+-- payments: ngay thanh toan khong o tuong lai, so tien > 0
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS check_payment_date;
+ALTER TABLE payments ADD CONSTRAINT check_payment_date
+  CHECK (payment_date <= NOW());
+
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS check_payment_amount_positive;
+ALTER TABLE payments ADD CONSTRAINT check_payment_amount_positive
+  CHECK (amount > 0);
+
+-- order_items: so luong > 0 va gioi han hop ly
+ALTER TABLE order_items DROP CONSTRAINT IF EXISTS check_quantity_range;
+ALTER TABLE order_items ADD CONSTRAINT check_quantity_range
+  CHECK (quantity > 0 AND quantity <= 1000);
+
+-- products: gia ban khong thap hon gia von
+ALTER TABLE products DROP CONSTRAINT IF EXISTS check_price_ge_cost;
+ALTER TABLE products ADD CONSTRAINT check_price_ge_cost
+  CHECK (unit_price >= cost_price);
+
+-- customers: email dung dinh dang co ban
+ALTER TABLE customers DROP CONSTRAINT IF EXISTS check_customer_email;
+ALTER TABLE customers ADD CONSTRAINT check_customer_email
+  CHECK (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+-- 2) DEFAULT cho audit fields tren cac bang chinh
+ALTER TABLE categories   ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE customers    ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE products     ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE order_status ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE orders       ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE order_items  ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE payments     ALTER COLUMN created_at SET DEFAULT NOW(), ALTER COLUMN updated_at SET DEFAULT NOW();
