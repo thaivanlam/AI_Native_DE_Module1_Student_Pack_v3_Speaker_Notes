@@ -1,8 +1,30 @@
 -- 01_create_oltp.sql
 -- DDL cho lop OLTP (schema core), dong bo voi database/ecommerce_oltp.dbml
+--
+-- =====================================================================
+-- SO DO QUAN HE (cha 1 ---< n con)
+-- =====================================================================
+--   categories   1 ---< n categories   (parent_category_id: danh muc cha-con, tu tham chieu)
+--   categories   1 ---< n products     (products.category_id)
+--   customers    1 ---< n orders       (orders.customer_id)
+--   order_status 1 ---< n orders       (orders.order_status, bang lookup)
+--   orders       1 ---< n order_items  (order_items.order_id, ON DELETE CASCADE)
+--   products     1 ---< n order_items  (order_items.product_id)
+--   orders       1 ---< n payments     (payments.order_id)
+--
+-- Thu tu tao bang = thu tu nap du lieu: bang CHA truoc, bang CON sau
+--   categories -> customers -> products -> order_status -> orders
+--   -> order_items -> payments
+-- (Nguoc lai, khi xoa/DROP: bang CON truoc, bang CHA sau.)
+-- order_items la bang "cau noi" giai quyet quan he n-n giua orders va products.
+-- =====================================================================
 CREATE SCHEMA IF NOT EXISTS core;
 SET search_path TO core, public;
 
+-- categories: bang CHA cua products; dong thoi la cha cua chinh no.
+-- FK parent_category_id -> categories.category_id (NULLABLE):
+--   NULL = danh muc goc (cap 1); co gia tri = danh muc con thuoc danh muc cha do.
+--   FK dam bao khong tro toi danh muc cha khong ton tai.
 CREATE TABLE IF NOT EXISTS categories (
   category_id VARCHAR(10) PRIMARY KEY,
   category_name VARCHAR(120) NOT NULL,
@@ -13,6 +35,7 @@ CREATE TABLE IF NOT EXISTS categories (
     FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)
 );
 
+-- customers: bang CHA (goc, khong co FK). Mot khach hang co 0..n don hang (orders).
 CREATE TABLE IF NOT EXISTS customers (
   customer_id VARCHAR(12) PRIMARY KEY,
   full_name VARCHAR(150) NOT NULL,
@@ -27,6 +50,10 @@ CREATE TABLE IF NOT EXISTS customers (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- products: bang CON cua categories, bang CHA cua order_items.
+-- FK category_id -> categories.category_id (NOT NULL):
+--   moi san pham bat buoc thuoc dung 1 danh muc co that; khong xoa duoc
+--   danh muc khi con san pham tham chieu (mac dinh NO ACTION).
 CREATE TABLE IF NOT EXISTS products (
   product_id VARCHAR(12) PRIMARY KEY,
   category_id VARCHAR(10) NOT NULL,
@@ -43,6 +70,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- Bang lookup trang thai don hang (order_status la PK, orders tham chieu vao day)
+-- order_status: bang CHA (lookup) cua orders. Mot trang thai dung cho n don hang.
 CREATE TABLE IF NOT EXISTS order_status (
   order_status VARCHAR(20) PRIMARY KEY
     CHECK (order_status IN ('pending','confirmed','shipped','completed','cancelled')),
@@ -53,6 +81,11 @@ CREATE TABLE IF NOT EXISTS order_status (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- orders: bang CON cua customers va order_status; bang CHA cua order_items va payments.
+-- FK customer_id  -> customers.customer_id: moi don phai thuoc 1 khach hang ton tai
+--   (khong co don "mo coi"); khong xoa duoc khach hang con don hang.
+-- FK order_status -> order_status.order_status: trang thai don chi nhan gia tri
+--   da dang ky trong bang lookup (thay cho CHECK cung trong bang orders).
 CREATE TABLE IF NOT EXISTS orders (
   order_id VARCHAR(12) PRIMARY KEY,
   customer_id VARCHAR(12) NOT NULL,
@@ -71,6 +104,13 @@ CREATE TABLE IF NOT EXISTS orders (
     FOREIGN KEY (order_status) REFERENCES order_status(order_status)
 );
 
+-- order_items: bang CON cua orders va products (bang cau noi n-n: 1 don co nhieu
+-- san pham, 1 san pham nam trong nhieu don).
+-- FK order_id   -> orders.order_id ON DELETE CASCADE: dong hang la mot phan cua don,
+--   xoa don thi cac dong hang cua don do bi xoa theo.
+-- FK product_id -> products.product_id: dong hang phai tro toi san pham co that;
+--   khong xoa duoc san pham da tung duoc ban (giu lich su ban hang).
+-- unit_price luu gia TAI THOI DIEM BAN (co the khac products.unit_price hien tai).
 CREATE TABLE IF NOT EXISTS order_items (
   order_item_id VARCHAR(16) PRIMARY KEY,
   order_id VARCHAR(12) NOT NULL,
@@ -89,6 +129,10 @@ CREATE TABLE IF NOT EXISTS order_items (
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
+-- payments: bang CON cua orders. Mot don co the co 0..n giao dich thanh toan
+-- (vd: that bai roi thanh cong, hoac hoan tien).
+-- FK order_id -> orders.order_id (khong CASCADE): khong xoa duoc don da co
+--   thanh toan -> bao ve du lieu tai chinh/doi soat.
 CREATE TABLE IF NOT EXISTS payments (
   payment_id VARCHAR(12) PRIMARY KEY,
   order_id VARCHAR(12) NOT NULL,
@@ -104,6 +148,8 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
 
+-- Index tren cac cot FK: PostgreSQL KHONG tu tao index cho FK (chi tao cho PK/UNIQUE),
+-- nen tao thu cong de tang toc JOIN cha-con va kiem tra FK khi xoa/cap nhat bang cha.
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status);
