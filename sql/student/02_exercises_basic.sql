@@ -36,6 +36,64 @@ ORDER BY order_date DESC
 LIMIT 5;
 
 -- ============================================================
+-- 1.2 Aggregate & Grouping — GROUP BY / HAVING (Q6-Q10)
+-- Quy ước doanh thu: loại các đơn order_status = 'cancelled'.
+-- Tháng tính theo giờ Việt Nam (Asia/Ho_Chi_Minh) vì order_date là timestamptz.
+-- ============================================================
+
+-- Q6: Tổng doanh thu theo từng tháng (DATE_TRUNC)
+SELECT TO_CHAR(DATE_TRUNC('month', order_date AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-MM') AS order_month,
+       COUNT(*)         AS order_count,
+       SUM(order_total) AS total_revenue
+FROM core.orders
+WHERE order_status <> 'cancelled'
+GROUP BY 1
+ORDER BY 1;
+
+-- Q7: Trung bình giá trị đơn hàng theo từng customer (AVG order_total GROUP BY customer_id)
+SELECT customer_id,
+       COUNT(*)                   AS order_count,
+       ROUND(AVG(order_total), 2) AS avg_order_value
+FROM core.orders
+WHERE order_status <> 'cancelled'
+GROUP BY customer_id
+ORDER BY avg_order_value DESC, customer_id;
+
+-- Q8: Số lượng đơn hàng theo từng order_status (tính cả cancelled)
+SELECT order_status,
+       COUNT(*) AS order_count
+FROM core.orders
+GROUP BY order_status
+ORDER BY order_count DESC;
+
+-- Q9: Tổng doanh thu theo category (order_items -> products -> categories)
+-- Doanh thu dòng = quantity * unit_price - discount_amount
+SELECT cat.category_id,
+       cat.category_name,
+       SUM(oi.quantity)                                        AS total_quantity,
+       SUM(oi.quantity * oi.unit_price - oi.discount_amount)   AS total_revenue
+FROM core.order_items oi
+JOIN core.orders o       ON o.order_id = oi.order_id
+JOIN core.products p     ON p.product_id = oi.product_id
+JOIN core.categories cat ON cat.category_id = p.category_id
+WHERE o.order_status <> 'cancelled'
+GROUP BY cat.category_id, cat.category_name
+ORDER BY total_revenue DESC;
+
+-- Q10: HAVING — categories có tổng doanh thu > 1000
+SELECT cat.category_id,
+       cat.category_name,
+       SUM(oi.quantity * oi.unit_price - oi.discount_amount) AS total_revenue
+FROM core.order_items oi
+JOIN core.orders o       ON o.order_id = oi.order_id
+JOIN core.products p     ON p.product_id = oi.product_id
+JOIN core.categories cat ON cat.category_id = p.category_id
+WHERE o.order_status <> 'cancelled'
+GROUP BY cat.category_id, cat.category_name
+HAVING SUM(oi.quantity * oi.unit_price - oi.discount_amount) > 1000
+ORDER BY total_revenue DESC;
+
+-- ============================================================
 -- Buổi 2: 10 business questions
 -- TODO 1: Tổng số khách hàng active theo city
 -- TODO 2: Top 10 sản phẩm có unit_price cao nhất

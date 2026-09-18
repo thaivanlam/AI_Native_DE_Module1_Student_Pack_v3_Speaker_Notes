@@ -1,0 +1,27 @@
+result_table,table_no,dimension_key,dimension_name,metric_count,total_revenue
+monthly_revenue,1,2026-01,2026-01,798,10016004500.00
+monthly_revenue,1,2026-02,2026-02,748,8943495500.00
+monthly_revenue,1,2026-03,2026-03,880,11125607000.00
+monthly_revenue,1,2026-04,2026-04,759,9461897000.00
+monthly_revenue,1,2026-05,2026-05,807,9768592000.00
+monthly_revenue,1,2026-06,2026-06,762,9404644500.00
+category_revenue,2,CAT006,Phones,1198,4746535000.00
+category_revenue,2,CAT007,Computers,1076,3480045500.00
+category_revenue,2,CAT008,Accessories,935,3407963000.00
+category_revenue,2,CAT009,Kitchen,1424,5058140500.00
+category_revenue,2,CAT010,Furniture,872,3324314500.00
+category_revenue,2,CAT011,Home Decor,1172,3937802000.00
+category_revenue,2,CAT012,Skincare,1466,5795217500.00
+category_revenue,2,CAT013,Makeup,1154,3734418000.00
+category_revenue,2,CAT014,Personal Care,1015,4384848000.00
+category_revenue,2,CAT015,Fitness,1000,4482427000.00
+category_revenue,2,CAT016,Outdoor,1088,3549959500.00
+category_revenue,2,CAT017,Sportswear,812,3335048500.00
+category_revenue,2,CAT018,Technology,1164,3726629000.00
+category_revenue,2,CAT019,Business,766,2886454500.00
+category_revenue,2,CAT020,Lifestyle,700,2870438000.00
+orders_by_status,3,cancelled,cancelled,246,
+orders_by_status,3,completed,completed,3880,
+orders_by_status,3,confirmed,confirmed,266,
+orders_by_status,3,pending,pending,147,
+orders_by_status,3,shipped,shipped,461,
