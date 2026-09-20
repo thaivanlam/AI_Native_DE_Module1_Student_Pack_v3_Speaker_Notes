@@ -1,0 +1,86 @@
+# Minh chứng 1.4 — Business Questions (BQ1-BQ5)
+# File queries : sql/student/02_exercises_basic.sql (dòng 167-222), đáp án: docs/answers_02.md
+# Container    : ecommerce-postgres (postgres:16) — db ecommerce, schema core, user de_user
+# Thời điểm    : 2026-09-18 18:34 +0700
+# Lệnh         : sed -n '167,222p' sql/student/02_exercises_basic.sql | docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1
+# Quy ước      : revenue = SUM(order_total) của order 'completed' (net, đã trừ discount); tháng theo giờ Asia/Ho_Chi_Minh
+
+SELECT COUNT(*)                       AS completed_orders,
+       COALESCE(SUM(order_total), 0)  AS total_revenue_2026_07
+FROM core.orders
+WHERE order_status = 'completed'
+  AND order_date >= TIMESTAMPTZ '2026-07-01 00:00:00+07'
+  AND order_date <  TIMESTAMPTZ '2026-08-01 00:00:00+07';
+ completed_orders | total_revenue_2026_07 
+------------------+-----------------------
+                0 |                     0
+(1 row)
+
+SELECT c.customer_id,
+       c.full_name,
+       COUNT(*)           AS completed_orders,
+       SUM(o.order_total) AS total_spent
+FROM core.orders o
+JOIN core.customers c ON c.customer_id = o.customer_id
+WHERE o.order_status = 'completed'
+GROUP BY c.customer_id, c.full_name
+ORDER BY total_spent DESC, c.customer_id
+LIMIT 1;
+ customer_id |   full_name   | completed_orders | total_spent  
+-------------+---------------+------------------+--------------
+ CUS000736   | Gordon Rogers |               10 | 173654000.00
+(1 row)
+
+SELECT cat.category_id,
+       cat.category_name,
+       COUNT(DISTINCT o.order_id) AS order_count
+FROM core.order_items oi
+JOIN core.orders o       ON o.order_id = oi.order_id
+JOIN core.products p     ON p.product_id = oi.product_id
+JOIN core.categories cat ON cat.category_id = p.category_id
+WHERE o.order_status = 'completed'
+GROUP BY cat.category_id, cat.category_name
+ORDER BY order_count DESC, cat.category_id
+LIMIT 1;
+ category_id | category_name | order_count 
+-------------+---------------+-------------
+ CAT012      | Skincare      |         824
+(1 row)
+
+SELECT COUNT(*)                                AS completed_orders,
+       SUM(order_total)                        AS total_revenue,
+       ROUND(SUM(order_total) / COUNT(*), 2)   AS aov
+FROM core.orders
+WHERE order_status = 'completed';
+ completed_orders | total_revenue  |     aov     
+------------------+----------------+-------------
+             3880 | 48077944000.00 | 12391222.68
+(1 row)
+
+SELECT COUNT(*) AS customers_gt_3_orders
+FROM (
+    SELECT customer_id
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+    HAVING COUNT(*) > 3
+) t;
+ customers_gt_3_orders 
+-----------------------
+                   530
+(1 row)
+
+
+## Kiểm tra bổ sung cho BQ1 — phạm vi dữ liệu đã nạp vào core.orders
+SELECT MIN(order_date AT TIME ZONE 'Asia/Ho_Chi_Minh') AS first_order_vn, MAX(order_date AT TIME ZONE 'Asia/Ho_Chi_Minh') AS last_order_vn, COUNT(*) AS total_orders FROM core.orders;
+   first_order_vn    |    last_order_vn    | total_orders 
+---------------------+---------------------+--------------
+ 2026-01-01 08:31:00 | 2026-06-29 22:51:00 |         5000
+(1 row)
+
+## File incremental CHƯA nạp vào core: data/incremental/day_2026-07-01/orders_daily.csv (status | orders | SUM(order_total))
+  cancelled  |   30 |     379388000.00
+  completed  |  361 |    4367329000.00
+  confirmed  |   78 |     986920500.00
+  pending    |   51 |     549910000.00
+  shipped    |   80 |     942856000.00

@@ -165,6 +165,62 @@ GROUP BY o.order_id, o.order_total
 ORDER BY o.order_id;
 
 -- ============================================================
+-- 1.4 Business Questions (BQ1-BQ5) — đáp án: docs/answers_02.md
+-- Quy ước KPI (docs/business_requirements.md): revenue = doanh thu net của order 'completed'
+--   (order_total đã trừ discount, xem đối soát Q15). Tháng tính theo giờ Asia/Ho_Chi_Minh.
+-- ============================================================
+
+-- BQ1: Total revenue tháng 7/2026
+SELECT COUNT(*)                       AS completed_orders,
+       COALESCE(SUM(order_total), 0)  AS total_revenue_2026_07
+FROM core.orders
+WHERE order_status = 'completed'
+  AND order_date >= TIMESTAMPTZ '2026-07-01 00:00:00+07'
+  AND order_date <  TIMESTAMPTZ '2026-08-01 00:00:00+07';
+
+-- BQ2: Customer có tổng chi tiêu cao nhất (id + tên + số tiền)
+SELECT c.customer_id,
+       c.full_name,
+       COUNT(*)           AS completed_orders,
+       SUM(o.order_total) AS total_spent
+FROM core.orders o
+JOIN core.customers c ON c.customer_id = o.customer_id
+WHERE o.order_status = 'completed'
+GROUP BY c.customer_id, c.full_name
+ORDER BY total_spent DESC, c.customer_id
+LIMIT 1;
+
+-- BQ3: Category có số lượng orders cao nhất (đếm DISTINCT order — 1 đơn nhiều item cùng category chỉ tính 1)
+SELECT cat.category_id,
+       cat.category_name,
+       COUNT(DISTINCT o.order_id) AS order_count
+FROM core.order_items oi
+JOIN core.orders o       ON o.order_id = oi.order_id
+JOIN core.products p     ON p.product_id = oi.product_id
+JOIN core.categories cat ON cat.category_id = p.category_id
+WHERE o.order_status = 'completed'
+GROUP BY cat.category_id, cat.category_name
+ORDER BY order_count DESC, cat.category_id
+LIMIT 1;
+
+-- BQ4: Average order value (AOV) = total revenue / số order completed
+SELECT COUNT(*)                                AS completed_orders,
+       SUM(order_total)                        AS total_revenue,
+       ROUND(SUM(order_total) / COUNT(*), 2)   AS aov
+FROM core.orders
+WHERE order_status = 'completed';
+
+-- BQ5: Số customers có hơn 3 orders (completed)
+SELECT COUNT(*) AS customers_gt_3_orders
+FROM (
+    SELECT customer_id
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+    HAVING COUNT(*) > 3
+) t;
+
+-- ============================================================
 -- Buổi 2: 10 business questions
 -- TODO 1: Tổng số khách hàng active theo city
 -- TODO 2: Top 10 sản phẩm có unit_price cao nhất
