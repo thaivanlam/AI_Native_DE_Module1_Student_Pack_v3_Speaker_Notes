@@ -1,0 +1,126 @@
+# Minh chung Bonus 2.1 — Advanced Analytics (Window Functions)
+# File queries : sql/student/03_exercises_advanced.sql (comment "-- Bonus 2.1", dong 7-88)
+# Container    : ecommerce-postgres (postgres:16) — db ecommerce, schema core, user de_user
+# Thoi diem    : 2026-09-20 18:11 +0700
+# Lenh         : sed -n '17,88p' sql/student/03_exercises_advanced.sql | docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1
+# Quy uoc      : revenue = SUM(order_total) cua order 'completed'; revenue theo category =
+#                SUM(quantity*unit_price - discount_amount) cua order_items thuoc don 'completed';
+#                thang theo gio Asia/Ho_Chi_Minh. B3 trich 10 dong dau (day du: bo LIMIT trong file .sql).
+
+WITH monthly AS (
+    SELECT DATE_TRUNC('month', order_date AT TIME ZONE 'Asia/Ho_Chi_Minh') AS month_start,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS monthly_revenue
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY 1
+)
+SELECT TO_CHAR(month_start, 'YYYY-MM')                      AS order_month,
+       order_count,
+       monthly_revenue,
+       SUM(monthly_revenue) OVER (ORDER BY month_start)     AS cumulative_revenue,
+       ROUND(100.0 * SUM(monthly_revenue) OVER (ORDER BY month_start)
+                   / SUM(monthly_revenue) OVER (), 2)       AS cumulative_pct
+FROM monthly
+ORDER BY month_start;
+ order_month | order_count | monthly_revenue | cumulative_revenue | cumulative_pct 
+-------------+-------------+-----------------+--------------------+----------------
+ 2026-01     |         654 |   8231711000.00 |      8231711000.00 |          17.12
+ 2026-02     |         590 |   7058655000.00 |     15290366000.00 |          31.80
+ 2026-03     |         712 |   8998721500.00 |     24289087500.00 |          50.52
+ 2026-04     |         623 |   7801828500.00 |     32090916000.00 |          66.75
+ 2026-05     |         675 |   8230727000.00 |     40321643000.00 |          83.87
+ 2026-06     |         626 |   7756301000.00 |     48077944000.00 |         100.00
+(6 rows)
+
+WITH cat_rev AS (
+    SELECT cat.category_id,
+           cat.category_name,
+           SUM(oi.quantity * oi.unit_price - oi.discount_amount) AS category_revenue
+    FROM core.order_items oi
+    JOIN core.orders o       ON o.order_id = oi.order_id
+    JOIN core.products p     ON p.product_id = oi.product_id
+    JOIN core.categories cat ON cat.category_id = p.category_id
+    WHERE o.order_status = 'completed'
+    GROUP BY cat.category_id, cat.category_name
+)
+SELECT category_id,
+       category_name,
+       category_revenue,
+       ROUND(100.0 * category_revenue / SUM(category_revenue) OVER (), 2) AS revenue_pct,
+       ROUND(100.0 * SUM(category_revenue) OVER (ORDER BY category_revenue DESC, category_id)
+                   / SUM(category_revenue) OVER (), 2)                    AS cumulative_pct,
+       RANK() OVER (ORDER BY category_revenue DESC)                       AS revenue_rank
+FROM cat_rev
+ORDER BY category_revenue DESC, category_id;
+ category_id | category_name | category_revenue | revenue_pct | cumulative_pct | revenue_rank 
+-------------+---------------+------------------+-------------+----------------+--------------
+ CAT012      | Skincare      |    4776238500.00 |        9.93 |           9.93 |            1
+ CAT009      | Kitchen       |    4192039000.00 |        8.72 |          18.65 |            2
+ CAT006      | Phones        |    3818082500.00 |        7.94 |          26.60 |            3
+ CAT015      | Fitness       |    3648597000.00 |        7.59 |          34.18 |            4
+ CAT014      | Personal Care |    3518033500.00 |        7.32 |          41.50 |            5
+ CAT011      | Home Decor    |    3289578000.00 |        6.84 |          48.34 |            6
+ CAT018      | Technology    |    3020981000.00 |        6.28 |          54.63 |            7
+ CAT013      | Makeup        |    3013922500.00 |        6.27 |          60.90 |            8
+ CAT016      | Outdoor       |    2873363500.00 |        5.98 |          66.87 |            9
+ CAT017      | Sportswear    |    2816603500.00 |        5.86 |          72.73 |           10
+ CAT007      | Computers     |    2810318000.00 |        5.85 |          78.58 |           11
+ CAT008      | Accessories   |    2809430000.00 |        5.84 |          84.42 |           12
+ CAT010      | Furniture     |    2726178000.00 |        5.67 |          90.09 |           13
+ CAT019      | Business      |    2460435500.00 |        5.12 |          95.21 |           14
+ CAT020      | Lifestyle     |    2304143500.00 |        4.79 |         100.00 |           15
+(15 rows)
+
+WITH bound AS (
+    SELECT MAX(order_date) AS last_order_overall FROM core.orders
+),
+last_per_customer AS (
+    SELECT o.customer_id,
+           MAX(o.order_date) AS last_order_date,
+           COUNT(*)          AS order_count,
+           SUM(o.order_total) FILTER (WHERE o.order_status = 'completed') AS lifetime_revenue
+    FROM core.orders o
+    GROUP BY o.customer_id
+)
+SELECT c.customer_id,
+       c.full_name,
+       c.city,
+       c.customer_segment,
+       lpc.order_count,
+       COALESCE(lpc.lifetime_revenue, 0) AS lifetime_revenue,
+       lpc.last_order_date AT TIME ZONE 'Asia/Ho_Chi_Minh' AS last_order_vn,
+       (b.last_order_overall::date - lpc.last_order_date::date) AS days_since_last_order
+FROM last_per_customer lpc
+JOIN core.customers c ON c.customer_id = lpc.customer_id
+CROSS JOIN bound b
+WHERE lpc.last_order_date < b.last_order_overall - INTERVAL '30 days'
+ORDER BY days_since_last_order DESC, lifetime_revenue DESC, c.customer_id
+LIMIT 10;
+ customer_id |    full_name     |       city       | customer_segment | order_count | lifetime_revenue |    last_order_vn    | days_since_last_order 
+-------------+------------------+------------------+------------------+-------------+------------------+---------------------+-----------------------
+ CUS000243   | Jeffery Miles    | Nha Trang        | Standard         |           1 |                0 | 2026-01-09 15:05:00 |                   171
+ CUS000732   | Cesar Cochran    | Nha Trang        | Standard         |           2 |      36948000.00 | 2026-01-14 08:56:00 |                   166
+ CUS000564   | Mr. Cody Mcclure | Ho Chi Minh City | Platinum         |           1 |      14295500.00 | 2026-01-18 14:20:00 |                   162
+ CUS000725   | Laura Nelson     | Vinh             | Platinum         |           1 |                0 | 2026-01-20 22:53:00 |                   160
+ CUS000457   | Matthew Wilson   | Da Nang          | Standard         |           1 |                0 | 2026-01-23 18:41:00 |                   157
+ CUS000807   | Natasha Lee      | Vinh             | Standard         |           1 |                0 | 2026-02-10 09:31:00 |                   139
+ CUS000651   | Aaron Bautista   | Vinh             | Standard         |           1 |       2060000.00 | 2026-02-14 18:11:00 |                   135
+ CUS000371   | Brianna Beasley  | Bac Ninh         | Standard         |           2 |                0 | 2026-02-16 22:07:00 |                   133
+ CUS000515   | Bryan Stevens    | Quang Ninh       | Standard         |           4 |      25708500.00 | 2026-02-20 22:20:00 |                   129
+ CUS000318   | Julie Clark      | Hue              | Silver           |           3 |      37253000.00 | 2026-02-21 19:50:00 |                   128
+(10 rows)
+
+
+WITH bound AS (SELECT MAX(order_date) AS last_order_overall FROM core.orders),
+lpc AS (SELECT customer_id, MAX(order_date) AS last_order_date FROM core.orders GROUP BY customer_id)
+SELECT (SELECT last_order_overall AT TIME ZONE 'Asia/Ho_Chi_Minh' FROM bound) AS max_order_date_vn,
+       (SELECT (last_order_overall - INTERVAL '30 days') AT TIME ZONE 'Asia/Ho_Chi_Minh' FROM bound) AS churn_cutoff_vn,
+       (SELECT COUNT(*) FROM lpc, bound WHERE lpc.last_order_date < bound.last_order_overall - INTERVAL '30 days') AS churned_customers,
+       (SELECT COUNT(*) FROM lpc) AS customers_with_orders,
+       (SELECT COUNT(*) FROM core.customers) AS customers_total;
+  max_order_date_vn  |   churn_cutoff_vn   | churned_customers | customers_with_orders | customers_total 
+---------------------+---------------------+-------------------+-----------------------+-----------------
+ 2026-06-29 22:51:00 | 2026-05-30 22:51:00 |               432 |                   994 |            1000
+(1 row)
+
