@@ -1,0 +1,110 @@
+VACUUM
+BEGIN
+DROP INDEX
+DROP INDEX
+DROP INDEX
+######## TRANG THAI A - KHONG CO INDEX ########
+                                                                                                QUERY PLAN                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=168.60..168.61 rows=1 width=40) (actual time=0.246..0.247 rows=1 loops=1)
+   Buffers: shared hit=78
+   ->  Seq Scan on orders  (cost=0.00..165.50 rows=619 width=6) (actual time=0.002..0.201 rows=626 loops=1)
+         Filter: ((order_date >= '2026-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2026-06-30 17:00:00+00'::timestamp with time zone) AND ((order_status)::text = 'completed'::text))
+         Rows Removed by Filter: 4374
+         Buffers: shared hit=78
+ Planning Time: 0.028 ms
+ Execution Time: 0.254 ms
+(8 rows)
+
+ROLLBACK
+BEGIN
+DROP INDEX
+######## TRANG THAI B - CHI INDEX 1 COT ########
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=119.48..119.49 rows=1 width=40) (actual time=0.210..0.211 rows=1 loops=1)
+   Buffers: shared hit=83
+   ->  Bitmap Heap Scan on orders  (cost=24.42..116.38 rows=619 width=6) (actual time=0.027..0.147 rows=626 loops=1)
+         Recheck Cond: ((order_date >= '2026-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2026-06-30 17:00:00+00'::timestamp with time zone))
+         Filter: ((order_status)::text = 'completed'::text)
+         Rows Removed by Filter: 169
+         Heap Blocks: exact=78
+         Buffers: shared hit=83
+         ->  Bitmap Index Scan on idx_orders_date  (cost=0.00..24.26 rows=798 width=0) (actual time=0.022..0.022 rows=795 loops=1)
+               Index Cond: ((order_date >= '2026-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2026-06-30 17:00:00+00'::timestamp with time zone))
+               Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.038 ms
+ Execution Time: 0.219 ms
+(15 rows)
+
+ROLLBACK
+NOTICE:  relation "idx_orders_status_date" already exists, skipping
+CREATE INDEX
+VACUUM
+######## TRANG THAI C - COMPOSITE COVERING INDEX ########
+                                                                                              QUERY PLAN                                                                                               
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=33.31..33.32 rows=1 width=40) (actual time=0.093..0.093 rows=1 loops=1)
+   Buffers: shared hit=6
+   ->  Index Only Scan using idx_orders_status_date on orders  (cost=0.28..30.21 rows=619 width=6) (actual time=0.010..0.056 rows=626 loops=1)
+         Index Cond: ((order_status = 'completed'::text) AND (order_date >= '2026-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2026-06-30 17:00:00+00'::timestamp with time zone))
+         Heap Fetches: 0
+         Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.069 ms
+ Execution Time: 0.103 ms
+(10 rows)
+
+CREATE SCHEMA
+DROP TABLE
+NOTICE:  table "orders_big" does not exist, skipping
+SELECT 2000000
+VACUUM
+######## 2M ROWS - TRUOC INDEX ########
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=38370.81..38370.82 rows=1 width=40) (actual time=43.380..45.418 rows=1 loops=1)
+   Buffers: shared hit=2272 read=20384
+   ->  Gather  (cost=38370.58..38370.79 rows=2 width=40) (actual time=43.286..45.409 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=2272 read=20384
+         ->  Partial Aggregate  (cost=37370.58..37370.59 rows=1 width=40) (actual time=35.593..35.594 rows=1 loops=3)
+               Buffers: shared hit=2272 read=20384
+               ->  Parallel Seq Scan on orders_big  (cost=0.00..37239.33 rows=26249 width=8) (actual time=0.076..33.786 rows=21372 loops=3)
+                     Filter: ((order_date >= '2024-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2024-06-30 17:00:00+00'::timestamp with time zone) AND (order_status = 'completed'::text))
+                     Rows Removed by Filter: 645295
+                     Buffers: shared hit=2272 read=20384
+ Planning Time: 0.061 ms
+ Execution Time: 45.439 ms
+(14 rows)
+
+CREATE INDEX
+VACUUM
+######## 2M ROWS - SAU INDEX ########
+                                                                                              QUERY PLAN                                                                                               
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3339.52..3339.53 rows=1 width=40) (actual time=14.133..14.134 rows=1 loops=1)
+   Buffers: shared hit=427
+   ->  Index Only Scan using idx_big_status_date on orders_big  (cost=0.43..3027.68 rows=62367 width=8) (actual time=0.016..7.769 rows=64116 loops=1)
+         Index Cond: ((order_status = 'completed'::text) AND (order_date >= '2024-05-31 17:00:00+00'::timestamp with time zone) AND (order_date < '2024-06-30 17:00:00+00'::timestamp with time zone))
+         Heap Fetches: 0
+         Buffers: shared hit=427
+ Planning Time: 0.080 ms
+ Execution Time: 14.153 ms
+(8 rows)
+
+NOTICE:  drop cascades to table perf_lab.orders_big
+DROP SCHEMA
+       indexname        | index_size 
+------------------------+------------
+ idx_orders_customer    | 88 kB
+ idx_orders_date        | 160 kB
+ idx_orders_status      | 72 kB
+ idx_orders_status_date | 256 kB
+ orders_pkey            | 176 kB
+(5 rows)
+

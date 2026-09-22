@@ -157,6 +157,14 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
 
+-- Buoi 2.2 (Performance): composite covering index cho cac truy van doanh thu theo
+-- thang + trang thai (BQ1, Q6). Thu tu cot = (equality, range): order_status dung '='
+-- nen dat truoc, order_date dung BETWEEN/range nen dat sau -> ca 2 vao duoc Index Cond.
+-- INCLUDE (order_total) dua cot can SUM() vao leaf page -> Index Only Scan, Heap Fetches: 0.
+-- Minh chung EXPLAIN truoc/sau: docs/explain_output/02-explain.md
+CREATE INDEX IF NOT EXISTS idx_orders_status_date
+  ON orders(order_status, order_date) INCLUDE (order_total);
+
 -- =====================================================================
 -- Session 01 Bonus: Advanced Schema (CHECK constraints + DEFAULT audit)
 -- Idempotent: DROP ... IF EXISTS truoc khi ADD de chay lai nhieu lan khong loi
