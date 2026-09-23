@@ -1,0 +1,194 @@
+# Minh chứng 1.2 — Window Functions (W1-W5)
+# File queries : sql/student/03_cte_window_cohort.sql (W1 dòng 131, W2 dòng 153, W3 dòng 199, W4 dòng 223, W5 dòng 260)
+# Container    : ecommerce-postgres (postgres:16) — db ecommerce, schema core, user de_user
+# Thời điểm    : 2026-09-23 15:09 +0700
+# Lệnh         : docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1
+# Quy ước      : chỉ tính order 'completed' (giống phần CTE); cột tiền trong DB là orders.order_total
+#                (đề bài gọi total_amount). Query có LIMIT 10, file này cắt còn 5 dòng đầu mỗi kết quả,
+#                riêng W2 giữ đủ 9 dòng vì cần nhìn thấy chỗ RANK nhảy số.
+# 5 hàm window : W1 ROW_NUMBER | W2 RANK + DENSE_RANK | W3 ROW_NUMBER + PARTITION BY | W4 LAG + LEAD | W5 SUM() OVER running total
+
+WITH customer_spending AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+)
+SELECT ROW_NUMBER() OVER (ORDER BY cs.total_spending DESC, cs.customer_id) AS spending_rank,
+       cs.customer_id,
+       c.full_name,
+       cs.order_count,
+       cs.total_spending
+FROM customer_spending cs
+JOIN core.customers c ON c.customer_id = cs.customer_id
+ORDER BY spending_rank
+LIMIT 10;
+ spending_rank | customer_id |    full_name    | order_count | total_spending 
+---------------+-------------+-----------------+-------------+----------------
+             1 | CUS000736   | Gordon Rogers   |          10 |   173654000.00
+             2 | CUS000475   | Carla Lee       |           8 |   164104000.00
+             3 | CUS000271   | Cindy Blair     |           9 |   150793500.00
+             4 | CUS000568   | Reginald Austin |           8 |   150558500.00
+             5 | CUS000646   | Ashley Small    |           9 |   150469500.00
+...  (cắt bớt 5 dòng; chỉ hiển thị 5 dòng đầu theo yêu cầu minh chứng)
+(10 rows)
+
+WITH customer_spending AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+),
+customer_ranked AS (
+    SELECT customer_id,
+           order_count,
+           total_spending,
+           ROW_NUMBER() OVER (ORDER BY order_count DESC, customer_id) AS rn,
+           RANK()       OVER (ORDER BY order_count DESC)              AS rnk,
+           DENSE_RANK() OVER (ORDER BY order_count DESC)              AS dns
+    FROM customer_spending
+)
+SELECT cr.rn,
+       cr.rnk AS rank_by_orders,
+       cr.dns AS dense_rank_by_orders,
+       cr.customer_id,
+       c.full_name,
+       cr.order_count,
+       cr.total_spending
+FROM customer_ranked cr
+JOIN core.customers c ON c.customer_id = cr.customer_id
+WHERE cr.dns <= 4
+  AND cr.rn  <= 9
+ORDER BY cr.rn;
+ rn | rank_by_orders | dense_rank_by_orders | customer_id |    full_name    | order_count | total_spending 
+----+----------------+----------------------+-------------+-----------------+-------------+----------------
+  1 |              1 |                    1 | CUS000786   | Kristy Scott    |          12 |   127610000.00
+  2 |              2 |                    2 | CUS000575   | Jessica Marquez |          11 |   148920000.00
+  3 |              3 |                    3 | CUS000304   | Roberto Moon    |          10 |   150294000.00
+  4 |              3 |                    3 | CUS000422   | Daniel Roberts  |          10 |   114106500.00
+  5 |              3 |                    3 | CUS000705   | Jake Medina     |          10 |    95530000.00
+  6 |              3 |                    3 | CUS000736   | Gordon Rogers   |          10 |   173654000.00
+  7 |              7 |                    4 | CUS000271   | Cindy Blair     |           9 |   150793500.00
+  8 |              7 |                    4 | CUS000276   | Nicole Jenkins  |           9 |   137605500.00
+  9 |              7 |                    4 | CUS000287   | Michele Dixon   |           9 |   113193000.00
+...  (giữ đủ 9 dòng để thấy RANK nhảy 3 -> 7)
+(9 rows)
+
+WITH customer_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT customer_id,
+       order_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS order_seq,
+       COUNT(*)     OVER (PARTITION BY customer_id)                               AS total_orders_of_customer
+FROM customer_orders
+ORDER BY customer_id, order_seq
+LIMIT 10;
+ customer_id | order_id  | order_day  | order_total | order_seq | total_orders_of_customer 
+-------------+-----------+------------+-------------+-----------+--------------------------
+ CUS000001   | ORD003121 | 2026-03-01 | 17237000.00 |         1 |                        8
+ CUS000001   | ORD003106 | 2026-03-19 | 15225500.00 |         2 |                        8
+ CUS000001   | ORD001406 | 2026-04-10 | 17775500.00 |         3 |                        8
+ CUS000001   | ORD000398 | 2026-05-19 |  5562000.00 |         4 |                        8
+ CUS000001   | ORD004607 | 2026-05-23 | 17347000.00 |         5 |                        8
+...  (cắt bớt 5 dòng; chỉ hiển thị 5 dòng đầu theo yêu cầu minh chứng)
+(10 rows)
+
+WITH customer_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT customer_id,
+       order_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       LAG(order_total)  OVER w                AS prev_amount,
+       order_total - LAG(order_total)  OVER w  AS diff_vs_prev,
+       ROUND(100.0 * (order_total - LAG(order_total) OVER w)
+             / NULLIF(LAG(order_total) OVER w, 0), 2)     AS pct_vs_prev,
+       LEAD(order_total) OVER w                AS next_amount,
+       LEAD(order_total) OVER w - order_total  AS diff_to_next,
+       CASE
+           WHEN LAG(order_total) OVER w IS NULL       THEN 'first_order'
+           WHEN order_total > LAG(order_total) OVER w THEN 'up'
+           WHEN order_total < LAG(order_total) OVER w THEN 'down'
+           ELSE 'flat'
+       END AS trend_vs_prev
+FROM customer_orders
+WINDOW w AS (PARTITION BY customer_id ORDER BY order_date, order_id)
+ORDER BY customer_id, order_date, order_id
+LIMIT 10;
+ customer_id | order_id  | order_day  | order_total | prev_amount | diff_vs_prev | pct_vs_prev | next_amount | diff_to_next | trend_vs_prev 
+-------------+-----------+------------+-------------+-------------+--------------+-------------+-------------+--------------+---------------
+ CUS000001   | ORD003121 | 2026-03-01 | 17237000.00 |             |              |             | 15225500.00 |  -2011500.00 | first_order
+ CUS000001   | ORD003106 | 2026-03-19 | 15225500.00 | 17237000.00 |  -2011500.00 |      -11.67 | 17775500.00 |   2550000.00 | down
+ CUS000001   | ORD001406 | 2026-04-10 | 17775500.00 | 15225500.00 |   2550000.00 |       16.75 |  5562000.00 | -12213500.00 | up
+ CUS000001   | ORD000398 | 2026-05-19 |  5562000.00 | 17775500.00 | -12213500.00 |      -68.71 | 17347000.00 |  11785000.00 | down
+ CUS000001   | ORD004607 | 2026-05-23 | 17347000.00 |  5562000.00 |  11785000.00 |      211.88 |  3429500.00 | -13917500.00 | up
+...  (cắt bớt 5 dòng; chỉ hiển thị 5 dòng đầu theo yêu cầu minh chứng)
+(10 rows)
+
+WITH completed_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT order_id,
+       customer_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       SUM(order_total) OVER (ORDER BY order_date, order_id
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_revenue,
+       ROUND(100.0 * SUM(order_total) OVER (ORDER BY order_date, order_id
+                                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+             / SUM(order_total) OVER (), 4) AS running_pct_of_total
+FROM completed_orders
+ORDER BY order_date, order_id
+LIMIT 10;
+ order_id  | customer_id | order_day  | order_total | running_revenue | running_pct_of_total 
+-----------+-------------+------------+-------------+-----------------+----------------------
+ ORD004497 | CUS000989   | 2026-01-01 |  6798000.00 |      6798000.00 |               0.0141
+ ORD001826 | CUS000856   | 2026-01-01 |  2360000.00 |      9158000.00 |               0.0190
+ ORD003341 | CUS000107   | 2026-01-01 |  6219000.00 |     15377000.00 |               0.0320
+ ORD001776 | CUS000513   | 2026-01-01 | 16903000.00 |     32280000.00 |               0.0671
+ ORD003871 | CUS000998   | 2026-01-01 | 16665500.00 |     48945500.00 |               0.1018
+...  (cắt bớt 5 dòng; chỉ hiển thị 5 dòng đầu theo yêu cầu minh chứng)
+(10 rows)
+
+# ============================================================
+# Đọc kết quả W2 — RANK vs DENSE_RANK (bằng chứng cho phần comment trong file SQL)
+# ------------------------------------------------------------
+#   rn 3,4,5,6 : 4 customer cùng 10 đơn -> RANK = 3 cho cả 4, DENSE_RANK = 3 cho cả 4.
+#   rn 7,8,9   : mức kế tiếp (9 đơn)    -> RANK NHẢY từ 3 lên 7 (mất hạng 4, 5, 6 — đúng bằng
+#                số dòng đồng hạng ở trên), còn DENSE_RANK chỉ tăng 3 -> 4, không để lại lỗ hổng.
+#   ROW_NUMBER (cột rn) thì luôn 1,2,3,... không quan tâm đồng hạng.
+#   => "Top 3 customer" theo yêu cầu = các dòng dense_rank_by_orders <= 3 (rn 1-6).
+#      Nếu lọc bằng RANK() <= 3 thì mức 9-đơn (RANK = 7) bị cắt mất sạch.
+#   Ghi chú: xếp hạng theo order_count vì total_spending có 969 giá trị khác nhau trên 973
+#      customer -> gần như không đồng hạng, RANK và DENSE_RANK sẽ ra số y hệt nhau, không minh hoạ được.
+# ------------------------------------------------------------
+# W4: đơn đầu tiên của mỗi customer có prev_amount = NULL (psql in ra ô trống) -> trend = 'first_order';
+#     đơn cuối cùng của customer có next_amount = NULL. PARTITION BY chặn không cho LAG/LEAD
+#     lấy nhầm đơn của customer khác.
+# W5: running_revenue cộng dồn đúng theo từng dòng (6.798.000 -> 9.158.000 -> 15.377.000 ...)
+#     nhờ ghi rõ ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW; nếu để mặc định (RANGE)
+#     thì 10 đơn cùng ngày 2026-01-01 sẽ nhận chung một con số luỹ kế.
+# ============================================================

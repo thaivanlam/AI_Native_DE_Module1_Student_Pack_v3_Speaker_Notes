@@ -117,3 +117,172 @@ FROM customer_aov
 ORDER BY aov DESC, customer_id;
 
 -- CTE5: (TODO) Retention — CTE cohort (tháng order đầu) + CTE orders tháng sau, tính % quay lại.
+
+-- ============================================================
+-- Buổi 3 — 1.2 Window Functions (W1 .. W5)
+-- Schema: core. Cột tiền của order trong DB tên là orders.order_total
+--   (đề bài gọi là total_amount) — dùng order_total cho đúng DDL 01_create_oltp.sql.
+-- Quy ước KPI (docs/business_requirements.md): chỉ tính order 'completed',
+--   giữ nguyên cho cả 5 query để số liệu so sánh được với phần CTE ở trên.
+-- Khác biệt cốt lõi so với GROUP BY: window function KHÔNG gộp dòng —
+--   mỗi dòng gốc vẫn còn, chỉ thêm cột tính trên "khung cửa sổ" do OVER() mô tả.
+-- ============================================================
+
+-- W1: ROW_NUMBER() OVER (ORDER BY total_spending DESC) — xếp hạng customer theo tổng chi tiêu
+-- OVER() không có PARTITION BY -> cửa sổ = TOÀN BỘ tập customer, đánh số 1..N liên tục.
+-- ROW_NUMBER luôn duy nhất: hai customer chi tiêu bằng nhau vẫn nhận 2 số khác nhau,
+-- thứ tự giữa họ do customer_id trong ORDER BY quyết định (thêm để kết quả ổn định giữa các lần chạy).
+WITH customer_spending AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+)
+SELECT ROW_NUMBER() OVER (ORDER BY cs.total_spending DESC, cs.customer_id) AS spending_rank,
+       cs.customer_id,
+       c.full_name,
+       cs.order_count,
+       cs.total_spending
+FROM customer_spending cs
+JOIN core.customers c ON c.customer_id = cs.customer_id
+ORDER BY spending_rank
+LIMIT 10;
+
+-- W2: RANK() vs DENSE_RANK() — top 3 customer (đồng hạng thì RANK nhảy số, DENSE_RANK thì không)
+-- KHÁC BIỆT:
+--   ROW_NUMBER  : 1,2,3,4,5   — luôn duy nhất, bỏ qua chuyện bằng nhau.
+--   RANK        : 1,1,3,4,4,6 — các dòng bằng nhau nhận CÙNG hạng, rồi NHẢY một khoảng
+--                 đúng bằng số dòng đồng hạng (2 người hạng 1 -> người kế tiếp là hạng 3, mất hạng 2).
+--   DENSE_RANK  : 1,1,2,3,3,4 — cũng cùng hạng khi bằng nhau nhưng KHÔNG để lại lỗ hổng,
+--                 hạng kế tiếp luôn +1. Dùng khi muốn lấy "3 mức giá trị cao nhất".
+-- Chọn tiêu chí order_count để xếp hạng vì ở đây mới thấy được sự khác biệt: total_spending
+-- có 969 giá trị khác nhau trên 973 customer (gần như không đồng hạng) nên RANK và DENSE_RANK
+-- sẽ ra số y hệt nhau; còn order_count chỉ có 12 giá trị -> đồng hạng hàng loạt, gap của RANK lộ rõ.
+-- Lọc theo DENSE_RANK() = "top 3 mức số đơn cao nhất" (nếu lọc bằng RANK() <= 3 thì khi
+-- mức cao nhất đã có >= 3 người, các mức sau sẽ bị cắt mất hoàn toàn).
+-- Lấy tới dns <= 4 (giới hạn 9 dòng) để NHÌN THẤY cú nhảy: 4 người cùng 10 đơn đều là rank 3,
+-- người tiếp theo (9 đơn) bị RANK đẩy thẳng lên 7 — mất hạng 4,5,6 — trong khi DENSE_RANK chỉ là 4.
+-- Top 3 theo yêu cầu = các dòng có dense_rank_by_orders <= 3 (6 dòng đầu).
+-- Lưu ý cú pháp: không lọc window function ở WHERE được (window chạy SAU WHERE) -> phải bọc thêm 1 CTE.
+WITH customer_spending AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+),
+customer_ranked AS (
+    SELECT customer_id,
+           order_count,
+           total_spending,
+           ROW_NUMBER() OVER (ORDER BY order_count DESC, customer_id) AS rn,
+           RANK()       OVER (ORDER BY order_count DESC)              AS rnk,
+           DENSE_RANK() OVER (ORDER BY order_count DESC)              AS dns
+    FROM customer_spending
+)
+SELECT cr.rn,
+       cr.rnk AS rank_by_orders,
+       cr.dns AS dense_rank_by_orders,
+       cr.customer_id,
+       c.full_name,
+       cr.order_count,
+       cr.total_spending
+FROM customer_ranked cr
+JOIN core.customers c ON c.customer_id = cr.customer_id
+WHERE cr.dns <= 4
+  AND cr.rn  <= 9
+ORDER BY cr.rn;
+
+-- W3: ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date) — số thứ tự order của mỗi customer
+-- PARTITION BY customer_id = chia dữ liệu thành từng nhóm theo customer, bộ đếm RESET về 1
+-- ở mỗi customer mới; ORDER BY order_date quyết định đơn nào là thứ 1, thứ 2...
+-- order_seq = 1 chính là đơn đầu tiên -> đây là nền để dựng cohort (CTE5) sau này.
+-- COUNT(*) OVER (PARTITION BY customer_id) — cùng partition nhưng KHÔNG có ORDER BY
+-- nên tính trên cả nhóm: tổng số đơn của customer đó, lặp lại trên mọi dòng của họ.
+WITH customer_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT customer_id,
+       order_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS order_seq,
+       COUNT(*)     OVER (PARTITION BY customer_id)                               AS total_orders_of_customer
+FROM customer_orders
+ORDER BY customer_id, order_seq
+LIMIT 10;
+
+-- W4: LAG() / LEAD() — so sánh order_total với đơn TRƯỚC và đơn SAU của cùng customer
+-- LAG(col)  = giá trị cột đó ở dòng LÙI 1 bậc trong cửa sổ (đơn liền trước của chính customer này).
+-- LEAD(col) = giá trị ở dòng TIẾN 1 bậc (đơn liền sau).
+-- Đơn đầu tiên không có đơn trước -> LAG trả NULL; đơn cuối cùng -> LEAD trả NULL.
+-- Vì đã PARTITION BY customer_id nên LAG/LEAD không bao giờ "nhảy" sang customer khác.
+-- Cột chênh lệch: diff_vs_prev = order_total - đơn trước (dương = lần này chi nhiều hơn lần trước),
+-- pct_vs_prev = % thay đổi, NULLIF chống chia 0.
+-- WINDOW w AS (...) khai báo cửa sổ 1 lần rồi dùng lại (OVER w) cho gọn thay vì lặp 6 lần.
+WITH customer_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT customer_id,
+       order_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       LAG(order_total)  OVER w                AS prev_amount,
+       order_total - LAG(order_total)  OVER w  AS diff_vs_prev,
+       ROUND(100.0 * (order_total - LAG(order_total) OVER w)
+             / NULLIF(LAG(order_total) OVER w, 0), 2)     AS pct_vs_prev,
+       LEAD(order_total) OVER w                AS next_amount,
+       LEAD(order_total) OVER w - order_total  AS diff_to_next,
+       CASE
+           WHEN LAG(order_total) OVER w IS NULL       THEN 'first_order'
+           WHEN order_total > LAG(order_total) OVER w THEN 'up'
+           WHEN order_total < LAG(order_total) OVER w THEN 'down'
+           ELSE 'flat'
+       END AS trend_vs_prev
+FROM customer_orders
+WINDOW w AS (PARTITION BY customer_id ORDER BY order_date, order_id)
+ORDER BY customer_id, order_date, order_id
+LIMIT 10;
+
+-- W5: SUM(order_total) OVER (ORDER BY order_date) — running total (doanh thu luỹ kế)
+-- OVER có ORDER BY nhưng không PARTITION BY -> cộng dồn từ đơn đầu tiên đến đơn hiện tại
+-- trên toàn bộ tập dữ liệu.
+-- KHUNG (frame): mặc định khi có ORDER BY là RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW,
+-- nghĩa là mọi dòng CÙNG order_date (peer) đều nhận cùng một giá trị luỹ kế -> nhìn như bị "đứng số".
+-- Ở đây ghi rõ ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW để cộng dồn theo TỪNG DÒNG,
+-- kèm order_id trong ORDER BY cho thứ tự xác định.
+-- SUM(order_total) OVER () (không ORDER BY, không PARTITION) = tổng doanh thu toàn bộ,
+-- dùng làm mẫu số cho running_pct_of_total -> % doanh thu đã tích luỹ tới dòng hiện tại.
+WITH completed_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT order_id,
+       customer_id,
+       (order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_day,
+       order_total,
+       SUM(order_total) OVER (ORDER BY order_date, order_id
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_revenue,
+       ROUND(100.0 * SUM(order_total) OVER (ORDER BY order_date, order_id
+                                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+             / SUM(order_total) OVER (), 4) AS running_pct_of_total
+FROM completed_orders
+ORDER BY order_date, order_id
+LIMIT 10;
