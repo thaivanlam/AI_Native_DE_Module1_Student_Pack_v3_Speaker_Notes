@@ -1,0 +1,143 @@
+# Minh chứng 1.1 — CTE Refactoring (CTE1-CTE4; CTE5 retention: chưa làm)
+# File queries : sql/student/03_cte_window_cohort.sql (CTE1 dòng 9, CTE2 dòng 28, CTE3 dòng 67, CTE4 dòng 95, CTE5 dòng 119)
+# Container    : ecommerce-postgres (postgres:16) — db ecommerce, schema core, user de_user
+# Thời điểm    : 2026-09-22 22:36 +0700
+# Lệnh         : docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1
+# Quy ước      : spending = SUM(order_total) đơn 'completed'; ngưỡng tier 500/2000 USD quy đổi 25,000 VND/USD
+# Hiển thị     : tối đa 10 dòng đầu mỗi kết quả + row count (dòng '(N rows)')
+
+WITH customer_spending AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+)
+SELECT cs.customer_id,
+       c.full_name,
+       cs.order_count,
+       cs.total_spending
+FROM customer_spending cs
+JOIN core.customers c ON c.customer_id = cs.customer_id
+ORDER BY cs.total_spending DESC, cs.customer_id
+LIMIT 10;
+ customer_id |    full_name    | order_count | total_spending 
+-------------+-----------------+-------------+----------------
+ CUS000736   | Gordon Rogers   |          10 |   173654000.00
+ CUS000475   | Carla Lee       |           8 |   164104000.00
+ CUS000271   | Cindy Blair     |           9 |   150793500.00
+ CUS000568   | Reginald Austin |           8 |   150558500.00
+ CUS000646   | Ashley Small    |           9 |   150469500.00
+ CUS000304   | Roberto Moon    |          10 |   150294000.00
+ CUS000575   | Jessica Marquez |          11 |   148920000.00
+ CUS000094   | David Marquez   |           8 |   148882000.00
+ CUS000838   | Nicole Clark    |           7 |   143993000.00
+ CUS000920   | Linda Ward      |           6 |   143088000.00
+(10 rows)
+
+WITH params AS (
+    SELECT 12500000::numeric AS low_max,
+           50000000::numeric AS medium_max
+),
+customer_spending AS (
+    SELECT c.customer_id,
+           COALESCE(SUM(o.order_total), 0) AS total_spending
+    FROM core.customers c
+    LEFT JOIN core.orders o
+           ON o.customer_id = c.customer_id
+          AND o.order_status = 'completed'
+    GROUP BY c.customer_id
+),
+customer_tier AS (
+    SELECT cs.customer_id,
+           cs.total_spending,
+           CASE
+               WHEN cs.total_spending <  p.low_max    THEN 'Low'
+               WHEN cs.total_spending <= p.medium_max THEN 'Medium'
+               ELSE 'High'
+           END AS spending_tier
+    FROM customer_spending cs
+    CROSS JOIN params p
+)
+SELECT spending_tier,
+       COUNT(*)                                            AS customer_count,
+       ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)  AS customer_pct,
+       MIN(total_spending)                                 AS min_spending,
+       MAX(total_spending)                                 AS max_spending,
+       ROUND(AVG(total_spending), 2)                       AS avg_spending
+FROM customer_tier
+GROUP BY spending_tier
+ORDER BY MIN(total_spending);
+ spending_tier | customer_count | customer_pct | min_spending | max_spending | avg_spending 
+---------------+----------------+--------------+--------------+--------------+--------------
+ Low           |             98 |         9.80 |            0 |  12417500.00 |   5416382.65
+ Medium        |            470 |        47.00 |  12576000.00 |  49993500.00 |  31112195.74
+ High          |            432 |        43.20 |  50017000.00 | 173654000.00 |  76213903.94
+(3 rows)
+
+WITH orders_per_customer AS (
+    SELECT customer_id,
+           COUNT(*) AS order_count
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+),
+customer_stats AS (
+    SELECT COUNT(*)                                                     AS customer_count,
+           MIN(order_count)                                             AS min_orders,
+           MAX(order_count)                                             AS max_orders,
+           ROUND(AVG(order_count), 2)                                   AS avg_orders,
+           PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY order_count)     AS median_orders,
+           COUNT(*) FILTER (WHERE order_count = 1)                      AS one_time_customers
+    FROM orders_per_customer
+)
+SELECT customer_count,
+       min_orders,
+       max_orders,
+       avg_orders,
+       median_orders,
+       one_time_customers,
+       ROUND(100.0 * one_time_customers / customer_count, 2) AS one_time_pct
+FROM customer_stats;
+ customer_count | min_orders | max_orders | avg_orders | median_orders | one_time_customers | one_time_pct 
+----------------+------------+------------+------------+---------------+--------------------+--------------
+            973 |          1 |         12 |       3.99 |             4 |                 73 |         7.50
+(1 row)
+
+WITH customer_orders AS (
+    SELECT customer_id,
+           COUNT(*)         AS order_count,
+           SUM(order_total) AS total_spending
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY customer_id
+),
+customer_aov AS (
+    SELECT customer_id,
+           order_count,
+           total_spending,
+           ROUND(total_spending / NULLIF(order_count, 0), 2) AS aov
+    FROM customer_orders
+)
+SELECT customer_id,
+       order_count,
+       total_spending,
+       aov
+FROM customer_aov
+ORDER BY aov DESC, customer_id;
+ customer_id | order_count | total_spending |     aov     
+-------------+-------------+----------------+-------------
+ CUS000881   |           1 |    30297500.00 | 30297500.00
+ CUS000297   |           2 |    58326000.00 | 29163000.00
+ CUS000213   |           2 |    58258500.00 | 29129250.00
+ CUS000087   |           3 |    80018500.00 | 26672833.33
+ CUS000076   |           3 |    79344000.00 | 26448000.00
+ CUS000539   |           3 |    78750000.00 | 26250000.00
+ CUS000962   |           1 |    25553000.00 | 25553000.00
+ CUS000349   |           1 |    25303000.00 | 25303000.00
+ CUS000491   |           2 |    50529000.00 | 25264500.00
+ CUS000370   |           2 |    50030000.00 | 25015000.00
+   ... (963 dòng còn lại đã lược bớt)
+(973 rows)
+
