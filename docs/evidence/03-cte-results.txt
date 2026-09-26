@@ -1,9 +1,10 @@
-# Minh chứng 1.1 — CTE Refactoring (CTE1-CTE4; CTE5 retention: chưa làm)
+# Minh chứng 1.1 — CTE Refactoring (CTE1-CTE5)
 # File queries : sql/student/03_cte_window_cohort.sql (CTE1 dòng 9, CTE2 dòng 28, CTE3 dòng 67, CTE4 dòng 95, CTE5 dòng 119)
 # Container    : ecommerce-postgres (postgres:16) — db ecommerce, schema core, user de_user
-# Thời điểm    : 2026-09-22 22:36 +0700
+# Thời điểm    : 2026-09-26 15:51 +0700
 # Lệnh         : docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1
-# Quy ước      : spending = SUM(order_total) đơn 'completed'; ngưỡng tier 500/2000 USD quy đổi 25,000 VND/USD
+# Quy ước      : spending = SUM(order_total) đơn 'completed'; ngưỡng tier 500/2000 USD quy đổi 25,000 VND/USD;
+#                tháng theo giờ Asia/Ho_Chi_Minh; cohort = tháng có đơn completed đầu tiên của customer
 # Hiển thị     : tối đa 10 dòng đầu mỗi kết quả + row count (dòng '(N rows)')
 
 WITH customer_spending AS (
@@ -140,4 +141,49 @@ ORDER BY aov DESC, customer_id;
  CUS000370   |           2 |    50030000.00 | 25015000.00
    ... (963 dòng còn lại đã lược bớt)
 (973 rows)
+
+WITH customer_orders AS (
+    SELECT customer_id,
+           DATE_TRUNC('month', order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_month
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+cohort AS (
+    SELECT customer_id,
+           MIN(order_month) AS cohort_month
+    FROM customer_orders
+    GROUP BY customer_id
+),
+later_orders AS (
+    SELECT co.customer_id,
+           MIN(co.order_month) AS first_return_month
+    FROM customer_orders co
+    JOIN cohort ch ON ch.customer_id = co.customer_id
+    WHERE co.order_month > ch.cohort_month
+    GROUP BY co.customer_id
+),
+data_range AS (
+    SELECT MAX(order_month) AS last_month
+    FROM customer_orders
+)
+SELECT TO_CHAR(ch.cohort_month, 'YYYY-MM')                          AS cohort_month,
+       COUNT(*)                                                     AS cohort_size,
+       COUNT(lo.customer_id)                                        AS returned_customers,
+       ROUND(100.0 * COUNT(lo.customer_id) / COUNT(*), 2)           AS retention_pct,
+       (DATE_PART('year',  dr.last_month) - DATE_PART('year',  ch.cohort_month)) * 12
+     + (DATE_PART('month', dr.last_month) - DATE_PART('month', ch.cohort_month)) AS months_observed
+FROM cohort ch
+LEFT JOIN later_orders lo ON lo.customer_id = ch.customer_id
+CROSS JOIN data_range dr
+GROUP BY ch.cohort_month, dr.last_month
+ORDER BY ch.cohort_month;
+ cohort_month | cohort_size | returned_customers | retention_pct | months_observed 
+--------------+-------------+--------------------+---------------+-----------------
+ 2026-01      |         479 |                467 |         97.49 |               5
+ 2026-02      |         219 |                199 |         90.87 |               4
+ 2026-03      |         158 |                134 |         84.81 |               3
+ 2026-04      |          60 |                 44 |         73.33 |               2
+ 2026-05      |          42 |                 16 |         38.10 |               1
+ 2026-06      |          15 |                  0 |          0.00 |               0
+(6 rows)
 

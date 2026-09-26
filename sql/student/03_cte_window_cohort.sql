@@ -116,7 +116,50 @@ SELECT customer_id,
 FROM customer_aov
 ORDER BY aov DESC, customer_id;
 
--- CTE5: (TODO) Retention — CTE cohort (tháng order đầu) + CTE orders tháng sau, tính % quay lại.
+-- CTE5: Retention đơn giản theo cohort — % khách quay lại ở tháng SAU tháng mua đầu tiên
+-- Chuỗi CTE: customer_orders (customer × tháng mua) -> cohort (tháng mua đầu = cohort_month)
+--            -> later_orders (đơn ở tháng > cohort_month) -> data_range (tháng cuối có dữ liệu).
+-- Định nghĩa: khách "quay lại" nếu có ít nhất 1 đơn completed ở BẤT KỲ tháng nào sau cohort_month.
+-- LEFT JOIN cohort -> later_orders: khách không quay lại vẫn còn dòng (lo.customer_id NULL),
+--   nhờ vậy COUNT(*) = cohort_size còn COUNT(lo.customer_id) = số khách quay lại (COUNT cột bỏ qua NULL).
+-- months_observed cho biết cohort đó được quan sát bao nhiêu tháng tiếp theo: cohort của tháng
+--   cuối cùng (2026-06) có months_observed = 0 nên retention 0% là hệ quả của cửa sổ dữ liệu,
+--   không phải khách kém trung thành -> đọc số phải xem cột này.
+WITH customer_orders AS (
+    SELECT customer_id,
+           DATE_TRUNC('month', order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_month
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+cohort AS (
+    SELECT customer_id,
+           MIN(order_month) AS cohort_month
+    FROM customer_orders
+    GROUP BY customer_id
+),
+later_orders AS (
+    SELECT co.customer_id,
+           MIN(co.order_month) AS first_return_month
+    FROM customer_orders co
+    JOIN cohort ch ON ch.customer_id = co.customer_id
+    WHERE co.order_month > ch.cohort_month
+    GROUP BY co.customer_id
+),
+data_range AS (
+    SELECT MAX(order_month) AS last_month
+    FROM customer_orders
+)
+SELECT TO_CHAR(ch.cohort_month, 'YYYY-MM')                          AS cohort_month,
+       COUNT(*)                                                     AS cohort_size,
+       COUNT(lo.customer_id)                                        AS returned_customers,
+       ROUND(100.0 * COUNT(lo.customer_id) / COUNT(*), 2)           AS retention_pct,
+       (DATE_PART('year',  dr.last_month) - DATE_PART('year',  ch.cohort_month)) * 12
+     + (DATE_PART('month', dr.last_month) - DATE_PART('month', ch.cohort_month)) AS months_observed
+FROM cohort ch
+LEFT JOIN later_orders lo ON lo.customer_id = ch.customer_id
+CROSS JOIN data_range dr
+GROUP BY ch.cohort_month, dr.last_month
+ORDER BY ch.cohort_month;
 
 -- ============================================================
 -- Buổi 3 — 1.2 Window Functions (W1 .. W5)
