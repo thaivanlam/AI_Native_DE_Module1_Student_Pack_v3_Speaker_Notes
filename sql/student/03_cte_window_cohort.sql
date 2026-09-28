@@ -451,3 +451,73 @@ SELECT TO_CHAR(cohort_month, 'YYYY-MM')                     AS cohort_month,
 FROM retention
 GROUP BY cohort_month
 ORDER BY cohort_month;
+
+-- ============================================================
+-- 2.1 Bonus — Advanced Customer Segmentation (RFM score 1-5 → 125 segments + LTV)
+-- ============================================================
+
+-- Bonus RFM: chấm điểm R/F/M thang 1-5, ghép thành rfm_segment (vd '555', '111') + LTV đơn giản
+--   Nguồn: cùng bảng RFM ở 1.3 (chỉ đơn 'completed', recency tính từ NOW()).
+--   Điểm theo phân vị (quintile) trên toàn bộ customer — 5 = tốt nhất:
+--     r_score: recency_days NHỎ (mua gần đây) -> 5
+--     f_score: frequency LỚN                  -> 5
+--     m_score: monetary LỚN                   -> 5
+-- Cách chấm: CEIL(5 * CUME_DIST()) thay vì NTILE(5).
+--   NTILE chia đúng 5 nhóm bằng nhau về số dòng nên các customer BẰNG giá trị có thể rơi vào
+--   2 nhóm khác nhau (vd 2 khách cùng 3 đơn, 1 người f=2, 1 người f=3) — vô lý khi đọc segment.
+--   CUME_DIST() = % customer có giá trị <= dòng hiện tại (theo ORDER BY), các dòng đồng hạng
+--   nhận CÙNG giá trị -> cùng điểm. Đổi lại, nhóm có thể lệch kích thước khi dữ liệu nhiều
+--   giá trị trùng (frequency chỉ có ~12 giá trị) — chấp nhận vì tính nhất quán quan trọng hơn.
+--   Với R: ORDER BY recency_days DESC để khách gần đây nhất có cume_dist cao nhất -> điểm 5.
+--   CUME_DIST luôn thuộc (0, 1] nên CEIL(5 * x) luôn thuộc 1..5.
+-- rfm_segment = r||f||m (chuỗi 3 ký tự) -> tối đa 5^3 = 125 segment.
+-- segment_name: gom 125 segment thành vài nhóm hành động được (quy tắc đơn giản theo R và F,M).
+-- LTV đơn giản = AOV × frequency (AOV = monetary / frequency). Về số học bằng đúng monetary
+--   (giá trị lịch sử khách đã mang lại); ghi tách AOV để thấy LTV đến từ "mua nhiều lần" hay
+--   "mỗi lần mua lớn".
+WITH completed_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+rfm AS (
+    SELECT customer_id,
+           GREATEST(EXTRACT(DAY FROM NOW() - MAX(order_date))::int, 0) AS recency_days,
+           COUNT(order_id)                                             AS frequency,
+           SUM(order_total)                                            AS monetary
+    FROM completed_orders
+    GROUP BY customer_id
+),
+rfm_scores AS (
+    SELECT customer_id,
+           recency_days,
+           frequency,
+           monetary,
+           CEIL(5 * CUME_DIST() OVER (ORDER BY recency_days DESC))::int AS r_score,
+           CEIL(5 * CUME_DIST() OVER (ORDER BY frequency))::int         AS f_score,
+           CEIL(5 * CUME_DIST() OVER (ORDER BY monetary))::int          AS m_score
+    FROM rfm
+)
+SELECT customer_id,
+       recency_days,
+       frequency,
+       monetary,
+       r_score,
+       f_score,
+       m_score,
+       r_score::text || f_score::text || m_score::text      AS rfm_segment,
+       CASE
+           WHEN r_score >= 4 AND f_score >= 4 AND m_score >= 4 THEN 'Champions'
+           WHEN r_score >= 3 AND f_score >= 3                  THEN 'Loyal'
+           WHEN r_score >= 4 AND f_score <= 2                  THEN 'New / Promising'
+           WHEN r_score <= 2 AND f_score >= 3                  THEN 'At Risk'
+           WHEN r_score <= 2 AND f_score <= 2                  THEN 'Hibernating'
+           ELSE 'Need Attention'
+       END                                                  AS segment_name,
+       ROUND(monetary / NULLIF(frequency, 0), 2)            AS aov,
+       ROUND(monetary / NULLIF(frequency, 0) * frequency, 2) AS ltv
+FROM rfm_scores
+ORDER BY customer_id;
