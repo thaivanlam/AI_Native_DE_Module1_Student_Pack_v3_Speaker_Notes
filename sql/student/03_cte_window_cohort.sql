@@ -521,3 +521,91 @@ SELECT customer_id,
        ROUND(monetary / NULLIF(frequency, 0) * frequency, 2) AS ltv
 FROM rfm_scores
 ORDER BY customer_id;
+
+-- ============================================================
+-- 2.2 Bonus — Time Series Analysis (MoM growth + moving average 7-day / 30-day)
+-- ============================================================
+
+-- Bonus timeseries (TS1): doanh thu theo tháng + MoM growth = (this - prev) / prev
+--   Nguồn: chỉ đơn 'completed' (giống các phần trên), cột tiền = orders.order_total.
+--   LAG(revenue) OVER (ORDER BY month) lấy doanh thu tháng liền trước; tháng đầu tiên không có
+--   tháng trước -> prev NULL -> MoM NULL (không tự điền 0 vì 0% tăng trưởng là sai nghĩa).
+--   NULLIF(prev, 0) chặn chia cho 0 nếu có tháng doanh thu = 0.
+-- Cột phụ: days_in_data + avg_daily_revenue + mom_daily_pct — tháng dài/ngắn khác nhau
+--   (Feb 28 ngày, dữ liệu June chỉ tới 29/06) nên so sánh doanh thu TB/ngày công bằng hơn
+--   so sánh tổng tháng; dùng để giải thích tháng tăng/giảm mạnh nhất.
+WITH completed_orders AS (
+    SELECT order_date, order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+monthly AS (
+    SELECT DATE_TRUNC('month', order_date)::date   AS month,
+           COUNT(*)                                AS order_count,
+           COUNT(DISTINCT order_date::date)        AS days_in_data,
+           SUM(order_total)                        AS revenue
+    FROM completed_orders
+    GROUP BY 1
+),
+monthly_lag AS (
+    SELECT month,
+           order_count,
+           days_in_data,
+           revenue,
+           LAG(revenue) OVER (ORDER BY month)                 AS prev_revenue,
+           revenue / days_in_data                             AS avg_daily_revenue,
+           LAG(revenue / days_in_data) OVER (ORDER BY month)  AS prev_avg_daily_revenue
+    FROM monthly
+)
+SELECT month,
+       order_count,
+       days_in_data,
+       revenue,
+       prev_revenue,
+       ROUND((revenue - prev_revenue) / NULLIF(prev_revenue, 0) * 100, 2)               AS mom_growth_pct,
+       ROUND(avg_daily_revenue, 0)                                                      AS avg_daily_revenue,
+       ROUND((avg_daily_revenue - prev_avg_daily_revenue)
+             / NULLIF(prev_avg_daily_revenue, 0) * 100, 2)                              AS mom_daily_pct
+FROM monthly_lag
+ORDER BY month;
+
+-- Bonus timeseries (TS2): doanh thu theo ngày + moving average 7-day / 30-day
+--   Bước 1 (calendar): generate_series tạo đủ mọi ngày từ ngày đầu tới ngày cuối, LEFT JOIN
+--     doanh thu, ngày không có đơn -> COALESCE 0. Lý do: frame ROWS BETWEEN N PRECEDING đếm
+--     theo DÒNG, nếu thiếu ngày thì "7 dòng" sẽ trải dài hơn 7 ngày lịch -> MA sai.
+--   Bước 2: AVG(revenue) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) = MA 7 ngày
+--     (ngày hiện tại + 6 ngày trước); tương tự 29 PRECEDING cho MA 30 ngày.
+--   Những ngày đầu chưa đủ 7/30 ngày lịch sử thì frame ngắn hơn -> trung bình không đúng nghĩa
+--     "7-day/30-day" -> trả NULL (dựa vào COUNT(*) OVER cùng frame).
+WITH daily_revenue AS (
+    SELECT order_date::date   AS day,
+           SUM(order_total)   AS revenue
+    FROM core.orders
+    WHERE order_status = 'completed'
+    GROUP BY 1
+),
+calendar AS (
+    SELECT generate_series(MIN(day), MAX(day), INTERVAL '1 day')::date AS day
+    FROM daily_revenue
+),
+daily AS (
+    SELECT c.day,
+           COALESCE(d.revenue, 0) AS revenue
+    FROM calendar c
+    LEFT JOIN daily_revenue d ON d.day = c.day
+),
+moving AS (
+    SELECT day,
+           revenue,
+           AVG(revenue)  OVER (ORDER BY day ROWS BETWEEN 6  PRECEDING AND CURRENT ROW) AS avg_7,
+           COUNT(*)      OVER (ORDER BY day ROWS BETWEEN 6  PRECEDING AND CURRENT ROW) AS n_7,
+           AVG(revenue)  OVER (ORDER BY day ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS avg_30,
+           COUNT(*)      OVER (ORDER BY day ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS n_30
+    FROM daily
+)
+SELECT day,
+       revenue,
+       CASE WHEN n_7  = 7  THEN ROUND(avg_7, 0)  END AS ma_7d,
+       CASE WHEN n_30 = 30 THEN ROUND(avg_30, 0) END AS ma_30d
+FROM moving
+ORDER BY day;
