@@ -329,3 +329,125 @@ SELECT order_id,
 FROM completed_orders
 ORDER BY order_date, order_id
 LIMIT 10;
+
+-- ============================================================
+-- 1.3 Customer Analytics — RFM (Recency, Frequency, Monetary) trong 1 bảng
+-- ============================================================
+
+-- RFM: 1 dòng / customer với 4 cột customer_id, recency_days, frequency, monetary
+--   recency_days = NOW() - MAX(order_date), lấy phần số ngày tròn (số ngày từ đơn cuối tới hiện tại)
+--   frequency    = COUNT(order_id)
+--   monetary     = SUM(order_total)
+-- Chỉ tính đơn 'completed' (cùng quy ước KPI với CTE1-CTE5 và docs/business_requirements.md):
+--   đơn cancelled/pending chưa phát sinh doanh thu nên không được tính vào F và M.
+-- Cách chọn: 1 GROUP BY duy nhất thay vì 3 CTE (recency / frequency / monetary) rồi JOIN lại.
+--   Cả 3 metrics cùng grain (customer_id) và cùng nguồn (core.orders đã lọc completed), nên
+--   MAX / COUNT / SUM tính được trong 1 lần quét bảng; tách 3 CTE sẽ quét 3 lần và thêm 2 JOIN
+--   mà kết quả y hệt. CTE completed_orders chỉ để tách phần lọc cho dễ đọc.
+-- Dùng INNER (không LEFT JOIN từ customers): khách chưa có đơn completed không có recency hợp lệ
+--   và sẽ ra NULL ở frequency/monetary -> loại khỏi bảng RFM (đề yêu cầu không NULL).
+-- Mọi order_date đều ở quá khứ nên recency_days >= 0; GREATEST(..., 0) chỉ là chốt an toàn
+--   nếu có đơn ghi lệch giờ tương lai. Giá trị recency thay đổi theo thời điểm chạy (NOW()).
+WITH completed_orders AS (
+    SELECT order_id,
+           customer_id,
+           order_date,
+           order_total
+    FROM core.orders
+    WHERE order_status = 'completed'
+)
+SELECT customer_id,
+       GREATEST(EXTRACT(DAY FROM NOW() - MAX(order_date))::int, 0) AS recency_days,
+       COUNT(order_id)                                             AS frequency,
+       SUM(order_total)                                            AS monetary
+FROM completed_orders
+GROUP BY customer_id
+ORDER BY customer_id;
+
+-- ============================================================
+-- 1.4 Cohort Analysis — Retention theo tháng (ma trận cohort × M0..M5)
+-- ============================================================
+
+-- Cohort: hàng = cohort_month, cột = số tháng kể từ tháng mua đầu (M0, M1, M2...), giá trị = %
+--   cohort_month = DATE_TRUNC('month', MIN(order_date)) của customer (chỉ đơn 'completed',
+--                  tháng theo giờ Asia/Ho_Chi_Minh — cùng quy ước với CTE5 / RFM).
+--   mN           = % customer của cohort có >= 1 đơn completed ở ĐÚNG tháng cohort_month + N.
+--                  M0 luôn 100% (tháng mua đầu). Khác CTE5 ("quay lại bất kỳ tháng nào sau"):
+--                  ở đây tính riêng từng tháng, nên M1, M2... không cộng dồn và có thể lên/xuống.
+-- Chuỗi CTE:
+--   customer_months -> (customer, tháng có mua) DISTINCT: mua 3 đơn trong 1 tháng vẫn tính 1 lần.
+--   cohort          -> tháng mua đầu mỗi customer.
+--   activity        -> month_offset = số tháng giữa tháng mua và cohort_month (dùng AGE để
+--                      đúng cả khi qua năm: năm*12 + tháng).
+--   cohort_size     -> mẫu số: số customer mỗi cohort.
+--   offsets         -> lưới cohort × offset 0..months_observed (generate_series). Chỉ sinh các
+--                      ô ĐÃ quan sát được, nên ô tương lai (vd cohort 2026-05 ở M2) ra NULL = "chưa
+--                      có dữ liệu", phân biệt với 0% = "có dữ liệu nhưng không ai mua".
+--   retention       -> LEFT JOIN lưới với số khách active -> COALESCE về 0 cho ô quan sát được.
+-- Pivot bằng MAX(...) FILTER (WHERE month_offset = N): mỗi cột lấy đúng 1 ô của cohort.
+WITH customer_months AS (
+    SELECT DISTINCT
+           customer_id,
+           DATE_TRUNC('month', order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS order_month
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+cohort AS (
+    SELECT customer_id,
+           MIN(order_month) AS cohort_month
+    FROM customer_months
+    GROUP BY customer_id
+),
+activity AS (
+    SELECT ch.cohort_month,
+           cm.customer_id,
+           (EXTRACT(YEAR  FROM AGE(cm.order_month, ch.cohort_month)) * 12
+          + EXTRACT(MONTH FROM AGE(cm.order_month, ch.cohort_month)))::int AS month_offset
+    FROM customer_months cm
+    JOIN cohort ch ON ch.customer_id = cm.customer_id
+),
+cohort_size AS (
+    SELECT cohort_month,
+           COUNT(*) AS cohort_size
+    FROM cohort
+    GROUP BY cohort_month
+),
+data_range AS (
+    SELECT MAX(order_month) AS last_month
+    FROM customer_months
+),
+offsets AS (
+    SELECT cs.cohort_month,
+           cs.cohort_size,
+           gs.month_offset
+    FROM cohort_size cs
+    CROSS JOIN data_range dr
+    CROSS JOIN LATERAL generate_series(
+               0,
+               (EXTRACT(YEAR  FROM AGE(dr.last_month, cs.cohort_month)) * 12
+              + EXTRACT(MONTH FROM AGE(dr.last_month, cs.cohort_month)))::int
+           ) AS gs(month_offset)
+),
+retention AS (
+    SELECT o.cohort_month,
+           o.cohort_size,
+           o.month_offset,
+           COUNT(a.customer_id)                                   AS active_customers,
+           ROUND(100.0 * COUNT(a.customer_id) / o.cohort_size, 2) AS retention_pct
+    FROM offsets o
+    LEFT JOIN activity a
+           ON a.cohort_month = o.cohort_month
+          AND a.month_offset = o.month_offset
+    GROUP BY o.cohort_month, o.cohort_size, o.month_offset
+)
+SELECT TO_CHAR(cohort_month, 'YYYY-MM')                     AS cohort_month,
+       MAX(retention_pct) FILTER (WHERE month_offset = 0)   AS m0,
+       MAX(retention_pct) FILTER (WHERE month_offset = 1)   AS m1,
+       MAX(retention_pct) FILTER (WHERE month_offset = 2)   AS m2,
+       MAX(retention_pct) FILTER (WHERE month_offset = 3)   AS m3,
+       MAX(retention_pct) FILTER (WHERE month_offset = 4)   AS m4,
+       MAX(retention_pct) FILTER (WHERE month_offset = 5)   AS m5,
+       MAX(cohort_size)                                     AS cohort_size
+FROM retention
+GROUP BY cohort_month
+ORDER BY cohort_month;
