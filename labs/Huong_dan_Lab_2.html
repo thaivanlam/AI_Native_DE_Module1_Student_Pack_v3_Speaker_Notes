@@ -467,6 +467,7 @@ WHERE order_status = 'completed';</code></pre></div>
     ) AS payment_success_rate_pct
 FROM core.payments;</code></pre></div>
   <p>Expected: <code>89.77</code></p>
+  <div class="callout"><strong>Giải thích <code>COUNT(*) FILTER (WHERE payment_status = 'success')</code></strong>Nghĩa là đếm số dòng mà <code>payment_status</code> là <code>success</code>. Đây là <b>FILTER clause</b>: nó chỉ lọc bên trong một aggregate function nằm ở câu lệnh <code>SELECT</code>, không lọc cả query như <code>WHERE</code>. Vì vậy <code>COUNT(*)</code> ở mẫu số vẫn đếm toàn bộ payments.</div>
   <p><b>3. Revenue reconciliation</b></p>
   <div class="code"><pre class="sql"><code>WITH order_side AS (
     SELECT SUM(order_total) AS revenue
