@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn Lab 2 – SQL thực chiến</title>
+<style>
+:root{
+  --bg:#f7f7f5;--surface:#ffffff;--surface-2:#f0efeb;--text:#1f2328;--muted:#5f6670;
+  --border:#e3e1dc;--accent:#2f6fdb;--accent-soft:#e8f0fd;--ok:#1f8a4c;--ok-soft:#e5f4ec;
+  --warn:#b86a00;--warn-soft:#fdf2e1;--bad:#c23b3b;--bad-soft:#fbe9e9;
+  --code-bg:#1e2127;--code-text:#e6e6e6;--kw:#7fb4ff;--fn:#e5c07b;--str:#98c379;--num:#d19a66;--com:#7f848e;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171a;--surface:#1c1f23;--surface-2:#23272c;--text:#e6e8eb;--muted:#9aa1ab;
+    --border:#2e3339;--accent:#6ea2ff;--accent-soft:#1d2a40;--ok:#4fc281;--ok-soft:#17301f;
+    --warn:#f0a847;--warn-soft:#352813;--bad:#f07171;--bad-soft:#3a1c1c;--code-bg:#0f1114;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171a;--surface:#1c1f23;--surface-2:#23272c;--text:#e6e8eb;--muted:#9aa1ab;
+  --border:#2e3339;--accent:#6ea2ff;--accent-soft:#1d2a40;--ok:#4fc281;--ok-soft:#17301f;
+  --warn:#f0a847;--warn-soft:#352813;--bad:#f07171;--bad-soft:#3a1c1c;--code-bg:#0f1114;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 16px 40px 20px;border-right:1px solid var(--border);font-size:14px}
+nav.toc h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+nav.toc ol{list-style:none;margin:0;padding:0}
+nav.toc li a{display:block;padding:5px 10px;border-radius:6px;color:var(--text);line-height:1.35}
+nav.toc li a:hover{background:var(--surface-2);text-decoration:none}
+nav.toc li a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav.toc .grp{margin:14px 0 4px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+main{padding:32px 40px 80px;min-width:0}
+header.hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 30px;margin-bottom:28px}
+.eyebrow{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-size:30px;line-height:1.25;margin:6px 0 8px}
+.sub{color:var(--muted);margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 12px;font-size:13px}
+section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 30px;margin-bottom:22px}
+section>h2{margin:0 0 14px;font-size:22px;line-height:1.3;display:flex;gap:10px;align-items:baseline}
+section>h2 .num{font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:2px 8px;white-space:nowrap}
+h3{font-size:17px;margin:24px 0 8px}
+p{margin:8px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:3px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--surface-2);border:1px solid var(--border);padding:1px 5px;border-radius:5px}
+.code{position:relative;margin:12px 0}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 16px;overflow-x:auto;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.code pre code{background:none;border:0;padding:0;font-size:inherit;color:inherit}
+.copy{position:absolute;top:8px;right:8px;font:12px system-ui,sans-serif;background:#2c313a;color:#cfd3da;border:1px solid #3a404a;border-radius:6px;padding:3px 9px;cursor:pointer;opacity:.85}
+.copy:hover{opacity:1}
+.k{color:var(--kw);font-weight:600}.f{color:var(--fn)}.s{color:var(--str)}.n{color:var(--num)}.c{color:var(--com);font-style:italic}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:14px 0}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.bad{border-color:var(--bad);background:var(--bad-soft)}
+.callout strong:first-child{display:block;margin-bottom:2px}
+.label{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:1px 8px;border-radius:5px;margin-bottom:4px}
+.label.bad{background:var(--bad-soft);color:var(--bad)}
+.label.ok{background:var(--ok-soft);color:var(--ok)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .l{font-size:13px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+th{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.r{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.checklist{list-style:none;padding:0}
+.checklist li{margin:0}
+.checklist label{display:flex;gap:10px;align-items:flex-start;padding:7px 10px;border-radius:8px;cursor:pointer}
+.checklist label:hover{background:var(--surface-2)}
+.checklist input{margin-top:5px;accent-color:var(--ok);width:16px;height:16px;flex:none}
+.checklist input:checked+span{color:var(--muted);text-decoration:line-through}
+.progress{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:6px}
+.bar{flex:1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+.flow{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:10px 0}
+.flow .step{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:14.5px}
+.flow .arrow{color:var(--muted);padding:1px 0 1px 18px;line-height:1.1}
+.hflow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+.hflow span.s2{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:14px}
+.hflow span.ar{color:var(--muted)}
+.timeline{list-style:none;padding:0;margin:8px 0}
+.timeline li{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.timeline li:last-child{border-bottom:0}
+.timeline .t{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}
+.template{display:grid;grid-template-columns:150px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:10px 0}
+.template div{padding:8px 12px;border-bottom:1px solid var(--border)}
+.template div:nth-last-child(-n+2){border-bottom:0}
+.template .h{background:var(--surface-2);font-weight:600;font-size:14px}
+.q{border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:14px 0;background:var(--surface)}
+.q h3{margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.q h3 .tag{font-size:12px;font-weight:700;background:var(--accent);color:#fff;border-radius:6px;padding:2px 8px}
+.grain{font-size:13.5px;color:var(--muted)}
+.grain b{color:var(--text)}
+details{border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin:10px 0;background:var(--surface-2)}
+details summary{cursor:pointer;font-weight:600}
+blockquote{margin:12px 0;padding:14px 18px;border-left:4px solid var(--accent);background:var(--surface-2);border-radius:0 10px 10px 0;font-style:italic}
+.toolbar{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;z-index:10}
+.toolbar button{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:99px;padding:8px 14px;font:13px system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.menu-btn{display:none}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;inset:0 30% 0 0;max-width:320px;background:var(--surface);z-index:20;transform:translateX(-105%);transition:transform .2s;height:100%;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+  nav.toc.open{transform:none}
+  .menu-btn{display:inline-block}
+  main{padding:16px}
+  section,header.hero{padding:20px 16px}
+  .g2,.g3{grid-template-columns:1fr}
+  h1{font-size:24px}
+  .template{grid-template-columns:110px 1fr}
+  .timeline li{grid-template-columns:90px 1fr}
+}
+@media print{nav.toc,.toolbar,.copy{display:none}.layout{display:block}section{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h2>Mục lục</h2>
+  <ol>
+    <li><a href="#muc-tieu">Mục tiêu cuối lab</a></li>
+    <li><a href="#material">Material</a></li>
+    <li><a href="#baseline">Baseline data</a></li>
+    <li><a href="#timeline">Timeline 150 phút</a></li>
+    <li class="grp">Chuẩn bị</li>
+    <li><a href="#b0">0 · Kiểm tra Lab 1</a></li>
+    <li><a href="#b1">1 · Nạp seed data</a></li>
+    <li><a href="#b2">2 · Grain của các bảng</a></li>
+    <li><a href="#b3">3 · Business question trước SQL</a></li>
+    <li class="grp">Kiến thức SQL</li>
+    <li><a href="#b4">4 · SELECT / ORDER BY / LIMIT</a></li>
+    <li><a href="#b5">5 · WHERE</a></li>
+    <li><a href="#b6">6 · NULL – 4 bẫy</a></li>
+    <li><a href="#b7">7 · Aggregate functions</a></li>
+    <li><a href="#b8">8 · GROUP BY</a></li>
+    <li><a href="#b9">9 · WHERE vs HAVING</a></li>
+    <li><a href="#b10">10 · INNER JOIN</a></li>
+    <li><a href="#b11">11 · LEFT JOIN</a></li>
+    <li><a href="#b12">12 · COUNT(*) sau LEFT JOIN</a></li>
+    <li><a href="#b13">13 · JOIN 1:N &amp; double-count</a></li>
+    <li class="grp">Business questions</li>
+    <li><a href="#b14">14 · Lab 2A: Q1–Q4</a></li>
+    <li><a href="#b15">15 · Lab 2B: Q5–Q6</a></li>
+    <li><a href="#b16">16 · Lab 2C: Q7–Q9</a></li>
+    <li><a href="#b17">17 · Lab 2D: Q10 Reconciliation</a></li>
+    <li class="grp">Kiểm chứng &amp; kết thúc</li>
+    <li><a href="#b18">18 · Kiểm tra baseline KPI</a></li>
+    <li><a href="#b19">19 · Validation sau JOIN</a></li>
+    <li><a href="#b20">20 · Validation NULL sau LEFT JOIN</a></li>
+    <li><a href="#b21">21 · Checkpoint cuối lab</a></li>
+    <li><a href="#b22">22 · Commit Git</a></li>
+    <li class="grp">Tham khảo</li>
+    <li><a href="#loi">Lỗi thường gặp</a></li>
+    <li><a href="#gv">Phần giảng viên</a></li>
+    <li><a href="#quiz">Câu hỏi kiểm tra nhanh</a></li>
+    <li><a href="#chot">Lời chốt</a></li>
+    <li><a href="#flow">Tóm tắt luồng Lab 2</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">AI-Native Data Engineering · Data Engineering Foundation</div>
+  <h1>Hướng dẫn chi tiết Lab 2<br>SQL thực chiến cho phân tích dữ liệu kinh doanh</h1>
+  <p class="sub">Bài 2 — từ business question đến KPI đã được đối soát.</p>
+  <div class="meta">
+    <span class="pill">Lab: 80–90 phút</span>
+    <span class="pill">Tổng buổi học: 150 phút</span>
+    <span class="pill">PostgreSQL · DBeaver · Docker</span>
+  </div>
+</header>
+
+<!-- MỤC TIÊU -->
+<section id="muc-tieu">
+  <h2>Mục tiêu cuối lab</h2>
+  <p>Sau Lab 2, học viên phải đạt được các kết quả sau:</p>
+  <ol>
+    <li>Kết nối lại được PostgreSQL database của Lab 1.</li>
+    <li>Xác nhận seed data đã được nạp đúng baseline.</li>
+    <li>Viết được <code>SELECT</code> / <code>WHERE</code> / <code>ORDER BY</code> / <code>LIMIT</code>.</li>
+    <li>Hiểu đúng NULL và các bẫy: <code>= NULL</code>, <code>COALESCE</code> không đúng business meaning, <code>COUNT(*)</code> sau LEFT JOIN, <code>!=</code> không giữ NULL.</li>
+    <li>Sử dụng đúng các hàm: <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>/<code>MAX</code>, <code>COUNT DISTINCT</code>, <code>FILTER</code>.</li>
+    <li>Hiểu và dùng đúng <code>GROUP BY</code>.</li>
+    <li>Phân biệt <code>WHERE</code> và <code>HAVING</code>.</li>
+    <li>Dùng đúng <code>INNER JOIN</code> và <code>LEFT JOIN</code>.</li>
+    <li>Nhận biết nguy cơ nhân bản dòng khi JOIN quan hệ 1:N.</li>
+    <li>Không SUM/AVG cột ở grain của bảng "1" sau khi JOIN sang bảng "N" nếu chưa xử lý duplication.</li>
+    <li>Giải được 10 business questions của Lab 2.</li>
+    <li>Mỗi query quan trọng phải xác định: Business question, Metric, Grain, Source table, Join, Filter, Group, Validation.</li>
+    <li>Có ít nhất 3 query JOIN nhiều bảng.</li>
+    <li>Có query reconciliation kiểm tra doanh thu: <code>order_total</code> ↔ item net amount.</li>
+    <li>Commit kết quả cuối buổi bằng Git.</li>
+  </ol>
+  <div class="callout warn">
+    <strong>Nguyên tắc quan trọng của Lab 2</strong>
+    <ul>
+      <li>SQL chạy được chưa có nghĩa là SQL đúng.</li>
+      <li>Trước khi JOIN phải biết grain của từng bảng.</li>
+      <li>Trước khi SUM phải biết một dòng output đại diện cho cái gì.</li>
+      <li>KPI quan trọng phải có query đối soát.</li>
+      <li>Không sửa số liệu để "cho khớp"; nếu lệch, phải truy lại grain, filter và join.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- MATERIAL -->
+<section id="material">
+  <h2>Material dùng trong Lab 2</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3 style="margin-top:0">Public / Student</h3>
+      <ul>
+        <li>slides Buổi 2</li>
+        <li><code>labs/session_02.md</code></li>
+        <li><code>data/seed/*</code></li>
+        <li><code>sql/student/02_exercises_basic.sql</code></li>
+        <li><code>assignments/session_02_assignment.md</code></li>
+        <li><code>Lab2_Seed_Data_Only.sql</code> (file import seed dành cho Lab 2)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Private / Instructor</h3>
+      <ul>
+        <li><code>sql/solutions/03_basic_queries.sql</code></li>
+        <li><code>sql/solutions/04_business_reports.sql</code></li>
+        <li>quiz answer</li>
+        <li>bootstrap/reset script trên máy giảng viên</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Lưu ý</strong>
+    <ul>
+      <li>Không mở solution ngay đầu lab.</li>
+      <li>Giảng viên chỉ dùng solution để kiểm chứng hoặc chữa sau checkpoint.</li>
+      <li>Học viên làm trên <code>sql/student/02_exercises_basic.sql</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- BASELINE -->
+<section id="baseline">
+  <h2>Baseline data của Lab 2</h2>
+  <h3>Dataset seed chuẩn</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Bảng</th><th style="text-align:right">Số dòng</th></tr></thead>
+    <tbody>
+      <tr><td><code>categories</code></td><td class="r">20</td></tr>
+      <tr><td><code>customers</code></td><td class="r">1,000</td></tr>
+      <tr><td><code>products</code></td><td class="r">500</td></tr>
+      <tr><td><code>orders</code></td><td class="r">5,000</td></tr>
+      <tr><td><code>order_items</code></td><td class="r">12,717</td></tr>
+      <tr><td><code>payments</code></td><td class="r">4,517</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Baseline KPI quan trọng</h3>
+  <div class="grid g3">
+    <div class="card kpi"><div class="l">Completed orders</div><div class="v">3,880</div></div>
+    <div class="card kpi"><div class="l">Completed revenue (VND)</div><div class="v">48,077,944,000</div></div>
+    <div class="card kpi"><div class="l">AOV (VND)</div><div class="v">≈ 12,391,222.68</div></div>
+    <div class="card kpi"><div class="l">Payment success rate</div><div class="v">≈ 89.77%</div></div>
+    <div class="card kpi"><div class="l">Reconciliation Q10 diff</div><div class="v">0</div></div>
+  </div>
+  <div class="callout bad">
+    <strong>Nếu kết quả của lớp khác baseline này: KHÔNG vội sửa query cho ra đúng số.</strong>
+    Phải kiểm tra: seed có đúng không; filter có đúng không; JOIN có nhân dòng không; grain có đúng không.
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <h2>Timeline gợi ý cho toàn buổi 150 phút</h2>
+  <ul class="timeline">
+    <li><span class="t">0–10'</span><span>Review schema + seed.</span></li>
+    <li><span class="t">10–25'</span><span>SELECT / WHERE / NULL.</span></li>
+    <li><span class="t">25–40'</span><span>Aggregate / GROUP BY / HAVING.</span></li>
+    <li><span class="t">40–55'</span><span>JOIN + business question workflow.</span></li>
+    <li><span class="t">55–60'</span><span>Brief Lab 2.</span></li>
+    <li><span class="t">60–75'</span><span>Load/check seed row count.</span></li>
+    <li><span class="t">75–95'</span><span>Query 1–4.</span></li>
+    <li><span class="t">95–125'</span><span>Query 5–10.</span></li>
+    <li><span class="t">125–140'</span><span>Reconciliation.</span></li>
+    <li><span class="t">140–150'</span><span>Checkpoint + quiz + assignment + commit.</span></li>
+  </ul>
+</section>
+
+<!-- BƯỚC 0 -->
+<section id="b0">
+  <h2><span class="num">Bước 0</span>Kiểm tra Lab 1 đã sẵn sàng</h2>
+  <p><b>Mục đích:</b> Lab 2 sử dụng trực tiếp database của Lab 1. Nếu schema <code>core</code> chưa đúng thì mọi JOIN và KPI phía sau đều không đáng tin.</p>
+  <h3>Kiểm tra Docker</h3>
+  <div class="code"><pre class="sh"><code>docker compose ps</code></pre></div>
+  <p>Kết quả mong đợi:</p>
+  <div class="code"><pre class="out"><code>ecommerce-postgres   postgres   running (healthy)</code></pre></div>
+  <p>Nếu chưa chạy:</p>
+  <div class="code"><pre class="sh"><code>docker compose up -d postgres</code></pre></div>
+  <h3>Kiểm tra DBeaver</h3>
+  <ul><li>Kết nối database <code>ecommerce</code>.</li><li>Mở SQL Editor.</li></ul>
+  <div class="code"><pre class="sql"><code>SELECT current_database();</code></pre></div>
+  <p>Kết quả mong đợi: <code>ecommerce</code></p>
+  <h3>Kiểm tra các bảng</h3>
+  <div class="code"><pre class="sql"><code>SELECT
+    table_schema,
+    table_name
+FROM information_schema.tables
+WHERE table_schema = 'core'
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;</code></pre></div>
+  <p>Phải thấy: <code>categories</code>, <code>customers</code>, <code>order_items</code>, <code>orders</code>, <code>payments</code>, <code>products</code>.</p>
+  <div class="callout"><strong>Lý do</strong>Lab 2 không học lại DDL. Nó giả định schema <code>core</code> đã tồn tại và đúng quan hệ từ Buổi 1.</div>
+</section>
+
+<!-- BƯỚC 1 -->
+<section id="b1">
+  <h2><span class="num">Bước 1</span>Nạp seed data vào database từ Lab 1</h2>
+  <p><b>Mục đích:</b> Lab 1 mới tạo schema <code>core</code> và 6 bảng OLTP, chưa nạp dữ liệu. Lab 2 phải bắt đầu bằng việc đưa seed dataset chuẩn vào chính schema đó.</p>
+  <p>Seed dataset chính thức của course: categories 20 · customers 1,000 · products 500 · orders 5,000 · order_items 12,717 · payments 4,517 rows.</p>
+  <p>Có 3 cách nạp dữ liệu. Trong lớp, <b>khuyến nghị CÁCH A</b>.</p>
+
+  <h3>Cách A – Khuyến nghị: import 1 file SQL trong DBeaver</h3>
+  <p>File sử dụng: <code>Lab2_Seed_Data_Only.sql</code>. File này:</p>
+  <ul>
+    <li><b>KHÔNG</b> DROP schema <code>core</code>.</li>
+    <li><b>KHÔNG</b> tạo lại bảng.</li>
+    <li>Giữ nguyên DDL/PK/FK/CHECK/INDEX mà học viên đã làm ở Lab 1.</li>
+    <li>TRUNCATE dữ liệu hiện có trong 6 bảng.</li>
+    <li>Nạp lại toàn bộ seed dataset chuẩn.</li>
+    <li>Chạy các query kiểm tra row count và KPI ở cuối file.</li>
+  </ul>
+  <div class="callout ok"><strong>Đây là cách phù hợp nhất về mặt sư phạm</strong>Lab 1 tạo STRUCTURE. Lab 2 chỉ nạp DATA vào structure đó.</div>
+  <p><b>Các bước trong DBeaver:</b></p>
+  <ol>
+    <li>Bật PostgreSQL: <code>docker compose up -d postgres</code></li>
+    <li>Kiểm tra: <code>docker compose ps</code> — phải thấy <code>ecommerce-postgres running (healthy)</code></li>
+    <li>Mở DBeaver.</li>
+    <li>Kết nối:
+      <div class="tablewrap"><table>
+        <tbody>
+          <tr><td>Host</td><td><code>localhost</code></td></tr>
+          <tr><td>Port</td><td><code>5432</code></td></tr>
+          <tr><td>Database</td><td><code>ecommerce</code></td></tr>
+          <tr><td>Username</td><td><code>de_user</code></td></tr>
+          <tr><td>Password</td><td><code>de_password</code></td></tr>
+        </tbody>
+      </table></div>
+      Nếu <code>.env</code>/<code>docker-compose.yml</code> của lớp dùng credential khác, lấy đúng credential của project.
+    </li>
+    <li>Trước khi import, xác nhận đang ở đúng database: <code>SELECT current_database();</code> → <code>ecommerce</code></li>
+    <li>Xác nhận schema <code>core</code> và 6 bảng tồn tại:
+      <div class="code"><pre class="sql"><code>SELECT
+    table_name
+FROM information_schema.tables
+WHERE table_schema = 'core'
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;</code></pre></div>
+    </li>
+    <li>Trong DBeaver: <b>File → Open File</b> hoặc mở SQL Editor rồi chọn file SQL. Mở <code>Lab2_Seed_Data_Only.sql</code>.</li>
+    <li>Kiểm tra connection ở toolbar đang là <code>ecommerce</code>.</li>
+    <li>Chạy <b>TOÀN BỘ</b> script bằng chức năng <b>Execute SQL Script</b>. Không chỉ chạy một statement đang đặt con trỏ.</li>
+    <li>Chờ script hoàn tất.</li>
+  </ol>
+  <div class="callout warn">
+    <strong>Lưu ý về <code>TRUNCATE TABLE ... CASCADE;</code></strong>
+    Nó xóa DỮ LIỆU hiện có trong 6 bảng rồi nạp lại baseline. Nó KHÔNG xóa schema và KHÔNG xóa cấu trúc bảng. Vì Lab 1 chưa có seed data nên đây là hành vi mong muốn. Nếu học viên đã tự nhập dữ liệu cần giữ thì phải backup trước.
+  </div>
+  <p><b>Ưu điểm:</b> một file duy nhất · không cần import từng CSV trong GUI · tất cả học viên về đúng cùng baseline · có thể chạy lại để reset Lab 2.</p>
+
+  <h3>Cách B – Nạp từ 6 CSV bằng Docker + psql</h3>
+  <p>Package đi kèm có <code>seed_csv/categories.csv</code>, <code>customers.csv</code>, <code>products.csv</code>, <code>orders.csv</code>, <code>order_items.csv</code>, <code>payments.csv</code> và script <code>load_lab2_seed.sh</code>.</p>
+  <p>Trên macOS/Linux:</p>
+  <ol>
+    <li>Giải nén <code>Lab2_Ecommerce_Seed_Import_Package.zip</code></li>
+    <li>Mở Terminal tại thư mục vừa giải nén.</li>
+    <li>Cho phép chạy script và chạy:</li>
+  </ol>
+  <div class="code"><pre class="sh"><code>chmod +x load_lab2_seed.sh
+./load_lab2_seed.sh</code></pre></div>
+  <p>Script thực hiện:</p>
+  <div class="hflow">
+    <span class="s2">Docker host</span><span class="ar">→</span>
+    <span class="s2">docker cp 6 CSV</span><span class="ar">→</span>
+    <span class="s2">/tmp/*.csv trong ecommerce-postgres</span><span class="ar">→</span>
+    <span class="s2">psql \copy</span><span class="ar">→</span>
+    <span class="s2">core.categories · customers · products · orders · order_items · payments</span>
+  </div>
+  <p>Cách này gần với cách loader chính thức của package hoạt động.</p>
+
+  <h3>Cách C – Chỉ dùng khi Lab 1 bị hỏng</h3>
+  <p>File: <code>Lab2_Ecommerce_Full_Import.sql</code>. File này DROP schema <code>core</code>; tạo lại 6 bảng; tạo constraints/indexes; nạp seed data.</p>
+  <div class="callout bad">
+    <strong>KHÔNG dùng đây là workflow bình thường của sinh viên</strong>
+    vì nó bỏ qua artifact schema mà sinh viên đã xây ở Lab 1. Chỉ dùng như "rescue file" khi: học viên mất database; DDL Lab 1 bị hỏng nghiêm trọng; cần đưa máy về baseline nhanh để tiếp tục buổi học.
+  </div>
+
+  <h3>Vì sao không dùng <code>scripts/bootstrap.sh</code> cho học viên ở Lab 2?</h3>
+  <p>Trong Full Package, <code>bootstrap.sh</code> không chỉ nạp seed. Nó còn: DROP <code>core</code>; dùng <code>sql/solutions/01_create_oltp.sql</code> để tạo schema; tạo và load Sales Data Mart bằng solution.</p>
+  <p>Nếu sinh viên dùng <code>bootstrap.sh</code> ở Lab 2: họ có thể vô tình bỏ qua kết quả Lab 1; họ nhìn thấy/được tạo trước artifact thuộc buổi sau; mất ý nghĩa của workflow student/solution.</p>
+  <p>Vì vậy: giảng viên có thể dùng bootstrap/reset cho máy demo nếu cần. Học viên Lab 2 nên dùng <code>Lab2_Seed_Data_Only.sql</code>.</p>
+
+  <h3>Kiểm tra ngay sau khi import</h3>
+  <div class="code"><pre class="sql"><code>SELECT 'categories' AS table_name, COUNT(*) AS row_count
+FROM core.categories
+
+UNION ALL
+
+SELECT 'customers', COUNT(*)
+FROM core.customers
+
+UNION ALL
+
+SELECT 'products', COUNT(*)
+FROM core.products
+
+UNION ALL
+
+SELECT 'orders', COUNT(*)
+FROM core.orders
+
+UNION ALL
+
+SELECT 'order_items', COUNT(*)
+FROM core.order_items
+
+UNION ALL
+
+SELECT 'payments', COUNT(*)
+FROM core.payments;</code></pre></div>
+  <p>Kết quả bắt buộc:</p>
+  <div class="code"><pre class="out"><code>categories      20
+customers       1000
+products        500
+orders          5000
+order_items     12717
+payments        4517</code></pre></div>
+  <div class="callout bad"><strong>Nếu một con số khác: DỪNG tại đây.</strong>Chưa làm các business queries.</div>
+
+  <h3>Kiểm tra KPI baseline ngay sau import</h3>
+  <p><b>1. Completed orders + revenue + AOV</b></p>
+  <div class="code"><pre class="sql"><code>SELECT
+    COUNT(*)                   AS completed_orders,
+    SUM(order_total)           AS completed_revenue,
+    ROUND(AVG(order_total), 2) AS aov
+FROM core.orders
+WHERE order_status = 'completed';</code></pre></div>
+  <p>Expected: <code>completed_orders = 3880</code> · <code>completed_revenue = 48077944000</code> · <code>aov = 12391222.68</code></p>
+  <p><b>2. Payment success rate</b></p>
+  <div class="code"><pre class="sql"><code>SELECT
+    ROUND(
+        100.0
+        * COUNT(*) FILTER (
+            WHERE payment_status = 'success'
+        )
+        / NULLIF(COUNT(*), 0),
+        2
+    ) AS payment_success_rate_pct
+FROM core.payments;</code></pre></div>
+  <p>Expected: <code>89.77</code></p>
+  <p><b>3. Revenue reconciliation</b></p>
+  <div class="code"><pre class="sql"><code>WITH order_side AS (
+    SELECT SUM(order_total) AS revenue
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+item_side AS (
+    SELECT
+        SUM(
+            oi.quantity * oi.unit_price
+            - oi.discount_amount
+        ) AS revenue
+    FROM core.orders o
+    JOIN core.order_items oi
+        ON oi.order_id = o.order_id
+    WHERE o.order_status = 'completed'
+)
+SELECT
+    o.revenue AS order_revenue,
+    i.revenue AS item_revenue,
+    o.revenue - i.revenue AS difference
+FROM order_side o
+CROSS JOIN item_side i;</code></pre></div>
+  <p>Expected: <code>difference = 0</code></p>
+
+  <h3>Checkpoint sau Bước 1</h3>
+  <div class="progress"><span class="count"></span><div class="bar"><i></i></div></div>
+  <ul class="checklist">
+    <li><label><input type="checkbox"><span>PostgreSQL healthy.</span></label></li>
+    <li><label><input type="checkbox"><span>Đang kết nối database <code>ecommerce</code>.</span></label></li>
+    <li><label><input type="checkbox"><span>Schema <code>core</code> vẫn là schema của Lab 1.</span></label></li>
+    <li><label><input type="checkbox"><span>6 bảng vẫn giữ PK/FK/CHECK/INDEX.</span></label></li>
+    <li><label><input type="checkbox"><span>Seed đã được import.</span></label></li>
+    <li><label><input type="checkbox"><span>Row counts đúng baseline.</span></label></li>
+    <li><label><input type="checkbox"><span>Completed orders = 3880.</span></label></li>
+    <li><label><input type="checkbox"><span>Completed revenue = 48,077,944,000.</span></label></li>
+    <li><label><input type="checkbox"><span>AOV ≈ 12,391,222.68.</span></label></li>
+    <li><label><input type="checkbox"><span>Payment success ≈ 89.77%.</span></label></li>
+    <li><label><input type="checkbox"><span>Revenue reconciliation difference = 0.</span></label></li>
+  </ul>
+  <div class="callout ok"><strong>Chỉ khi checkpoint này PASS mới sang phần viết SQL analytics.</strong></div>
+</section>
+
+<!-- BƯỚC 2 -->
+<section id="b2">
+  <h2><span class="num">Bước 2</span>Xác định grain của các bảng</h2>
+  <p><b>Mục đích:</b> Đây là bước quan trọng nhất trước khi JOIN. Hỏi học viên: <i>"Một dòng của bảng này đại diện cho cái gì?"</i></p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Bảng</th><th>Grain (1 dòng = …)</th></tr></thead>
+    <tbody>
+      <tr><td><code>core.customers</code></td><td>1 customer</td></tr>
+      <tr><td><code>core.products</code></td><td>1 product</td></tr>
+      <tr><td><code>core.orders</code></td><td>1 order</td></tr>
+      <tr><td><code>core.order_items</code></td><td>1 item trong 1 order</td></tr>
+      <tr><td><code>core.payments</code></td><td>1 payment record</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Quan hệ quan trọng</h3>
+  <div class="grid g2">
+    <div class="card"><code>customers</code> 1:N <code>orders</code></div>
+    <div class="card"><code>orders</code> 1:N <code>order_items</code></div>
+    <div class="card"><code>products</code> 1:N <code>order_items</code></div>
+    <div class="card"><code>orders</code> 1:N <code>payments</code></div>
+  </div>
+  <div class="callout"><strong>Lý do</strong>JOIN có thể thay đổi số dòng. Nếu không biết grain trước JOIN, rất dễ SUM sai.</div>
+</section>
+
+<!-- BƯỚC 3 -->
+<section id="b3">
+  <h2><span class="num">Bước 3</span>Viết business question trước khi viết SQL</h2>
+  <p><b>Mục đích:</b> Không bắt đầu bằng cú pháp. Bắt đầu bằng business meaning.</p>
+  <p>Template bắt buộc trước mỗi query quan trọng — ví dụ <i>"Doanh thu theo tháng?"</i>:</p>
+  <div class="template">
+    <div class="h">Business Question</div><div>Doanh thu theo tháng?</div>
+    <div class="h">Metric</div><div><code>SUM(order_total)</code></div>
+    <div class="h">Grain</div><div>1 dòng / tháng</div>
+    <div class="h">Source</div><div><code>core.orders</code></div>
+    <div class="h">Join</div><div>Không cần</div>
+    <div class="h">Filter</div><div><code>order_status = 'completed'</code></div>
+    <div class="h">Group</div><div>month</div>
+    <div class="h">Validation</div><div>Tổng revenue theo tháng phải cộng lại bằng tổng completed revenue toàn kỳ.</div>
+  </div>
+  <div class="callout"><strong>Lý do</strong>Nếu metric và grain chưa rõ thì câu SQL dễ "đúng cú pháp nhưng sai nghiệp vụ".</div>
+</section>
+
+<!-- BƯỚC 4 -->
+<section id="b4">
+  <h2><span class="num">Bước 4</span>SELECT / Alias / ORDER BY / LIMIT</h2>
+  <p><b>Mục đích:</b> Học cách lấy đúng cột và định hình output.</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    order_id,
+    customer_id,
+    order_date::date AS order_day,
+    order_total AS revenue
+FROM core.orders
+ORDER BY order_date
+LIMIT 20;</code></pre></div>
+  <p><b>Hỏi:</b> "Một dòng output đang đại diện cho gì?" → <b>1 order.</b></p>
+  <div class="callout"><strong>Lý do</strong>SELECT không chỉ là "chọn cột". Nó phải giữ đúng grain mà business question cần.</div>
+</section>
+
+<!-- BƯỚC 5 -->
+<section id="b5">
+  <h2><span class="num">Bước 5</span>WHERE: lọc dòng nguồn</h2>
+  <p><b>Mục đích:</b> Lọc row trước khi aggregate.</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    order_id,
+    customer_id,
+    order_total
+FROM core.orders
+WHERE order_status = 'completed'
+  AND order_total &gt;= 1000000
+ORDER BY order_total DESC;</code></pre></div>
+  <p><b>Ý nghĩa:</b> chỉ giữ completed orders; chỉ giữ order ≥ 1 triệu.</p>
+  <p><b>Hỏi:</b> "WHERE chạy trước hay sau GROUP BY?" → <b>Trước GROUP BY.</b></p>
+</section>
+
+<!-- BƯỚC 6 -->
+<section id="b6">
+  <h2><span class="num">Bước 6</span>NULL: 4 bẫy cần nhận biết</h2>
+  <p><b>Mục đích:</b> NULL không phải 0. NULL không phải chuỗi rỗng. NULL có nghĩa "unknown / missing".</p>
+
+  <h3>6.1. Bẫy <code>= NULL</code></h3>
+  <div class="grid g2">
+    <div><span class="label bad">SAI</span><div class="code"><pre class="sql"><code>WHERE some_column = NULL</code></pre></div></div>
+    <div><span class="label ok">ĐÚNG</span><div class="code"><pre class="sql"><code>WHERE some_column IS NULL</code></pre></div></div>
+  </div>
+  <p><b>Lý do:</b> SQL dùng 3-valued logic: TRUE / FALSE / UNKNOWN.</p>
+
+  <h3>6.2. Bẫy COALESCE</h3>
+  <p>Không tự động dùng <code>AVG(COALESCE(discount_amount, 0))</code> nếu NULL nghĩa là "không biết". Có thể dùng <code>AVG(discount_amount)</code> nếu business question chỉ muốn tính trên các record có giá trị.</p>
+  <div class="callout warn"><strong>Lưu ý</strong>Trong dataset hiện tại <code>discount_amount</code> của <code>order_items</code> có DEFAULT 0, nên cần đọc đúng Data Contract trước khi suy diễn NULL semantics.</div>
+  <p><b>Nguyên tắc:</b> COALESCE chỉ dùng khi default có business meaning rõ.</p>
+
+  <h3>6.3. <code>COUNT(*)</code> và <code>COUNT(column)</code></h3>
+  <ul>
+    <li><code>COUNT(*)</code> đếm tất cả row.</li>
+    <li><code>COUNT(column)</code> bỏ qua NULL trong column đó.</li>
+  </ul>
+  <p>Điều này đặc biệt quan trọng sau LEFT JOIN.</p>
+
+  <h3>6.4. Bẫy <code>!=</code> với NULL</h3>
+  <p><code>WHERE order_status != 'completed'</code> không giữ row <code>order_status = NULL</code>. Nếu business yêu cầu giữ missing status:</p>
+  <div class="code"><pre class="sql"><code>WHERE order_status != 'completed'
+   OR order_status IS NULL;</code></pre></div>
+</section>
+
+<!-- BƯỚC 7 -->
+<section id="b7">
+  <h2><span class="num">Bước 7</span>Aggregate functions</h2>
+  <p><b>Mục đích:</b> Biến nhiều row thành metric.</p>
+  <p>Các hàm chính: <code>COUNT(*)</code> · <code>COUNT(column)</code> · <code>COUNT(DISTINCT column)</code> · <code>SUM(...)</code> · <code>AVG(...)</code> · <code>MIN(...)</code> · <code>MAX(...)</code></p>
+  <div class="code"><pre class="sql"><code>SELECT
+    order_status,
+    COUNT(*) AS orders,
+    SUM(order_total) AS revenue,
+    AVG(order_total) AS aov
+FROM core.orders
+GROUP BY order_status
+ORDER BY order_status;</code></pre></div>
+  <p><b>Hỏi:</b> "Một dòng output đại diện cho gì?" → <b>1 status.</b></p>
+</section>
+
+<!-- BƯỚC 8 -->
+<section id="b8">
+  <h2><span class="num">Bước 8</span>GROUP BY: thay đổi grain</h2>
+  <p><b>Mục đích:</b> Hiểu GROUP BY làm thay đổi grain của result.</p>
+  <div class="hflow"><span class="s2"><code>core.orders</code> · 1 row / order</span><span class="ar">→ GROUP BY month →</span><span class="s2">1 row / month</span></div>
+  <div class="code"><pre class="sql"><code>SELECT
+    date_trunc('month', order_date)::date AS month,
+    COUNT(*) AS orders,
+    SUM(order_total) AS revenue,
+    AVG(order_total) AS aov
+FROM core.orders
+WHERE order_status = 'completed'
+GROUP BY 1
+ORDER BY 1;</code></pre></div>
+  <div class="callout"><strong>Lý do</strong>Mọi metric phải được hiểu ở đúng grain đầu ra.</div>
+</section>
+
+<!-- BƯỚC 9 -->
+<section id="b9">
+  <h2><span class="num">Bước 9</span>WHERE khác HAVING</h2>
+  <p><b>Mục đích:</b> Phân biệt filter row nguồn và filter group sau aggregate.</p>
+  <p>Ví dụ bài toán: chỉ lấy completed orders; những tháng có revenue &gt; 1 tỷ.</p>
+  <span class="label bad">SAI</span>
+  <div class="code"><pre class="sql"><code>SELECT
+    date_trunc('month', order_date)::date AS month,
+    SUM(order_total) AS total_revenue
+FROM core.orders
+WHERE order_status = 'completed'
+  AND SUM(order_total) &gt; 1000000000
+GROUP BY 1;</code></pre></div>
+  <p>PostgreSQL sẽ báo lỗi vì aggregate không được dùng như vậy trong WHERE.</p>
+  <span class="label ok">ĐÚNG</span>
+  <div class="code"><pre class="sql"><code>SELECT
+    date_trunc('month', order_date)::date AS month,
+    SUM(order_total) AS total_revenue
+FROM core.orders
+WHERE order_status = 'completed'
+GROUP BY 1
+HAVING SUM(order_total) &gt; 1000000000
+ORDER BY 1;</code></pre></div>
+  <h3>Logical processing</h3>
+  <div class="hflow">
+    <span class="s2">FROM</span><span class="ar">→</span><span class="s2">WHERE</span><span class="ar">→</span><span class="s2">GROUP BY</span><span class="ar">→</span><span class="s2">HAVING</span><span class="ar">→</span><span class="s2">SELECT</span><span class="ar">→</span><span class="s2">ORDER BY</span>
+  </div>
+  <div class="grid g2">
+    <div class="card"><b>WHERE</b><br>lọc row <i>trước</i> GROUP BY</div>
+    <div class="card"><b>HAVING</b><br>lọc group <i>sau</i> GROUP BY</div>
+  </div>
+</section>
+
+<!-- BƯỚC 10 -->
+<section id="b10">
+  <h2><span class="num">Bước 10</span>INNER JOIN</h2>
+  <p><b>Mục đích:</b> Chỉ giữ những record có khóa khớp ở cả hai bảng. Ví dụ customer → order:</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    c.full_name,
+    o.order_id,
+    o.order_total
+FROM core.customers c
+INNER JOIN core.orders o
+    ON o.customer_id = c.customer_id;</code></pre></div>
+  <p><b>Use case:</b> phân tích những customer thực sự đã có order.</p>
+  <div class="callout"><strong>Lý do</strong>Customer chưa mua gì sẽ không xuất hiện.</div>
+</section>
+
+<!-- BƯỚC 11 -->
+<section id="b11">
+  <h2><span class="num">Bước 11</span>LEFT JOIN</h2>
+  <p><b>Mục đích:</b> Giữ toàn bộ row của bảng bên trái. Ví dụ tìm customer chưa có order:</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    c.full_name,
+    o.order_id
+FROM core.customers c
+LEFT JOIN core.orders o
+    ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL;</code></pre></div>
+  <p><b>Ý nghĩa:</b> customer vẫn tồn tại; nếu không có order thì cột phía <code>orders</code> = NULL.</p>
+  <div class="callout warn"><strong>Cảnh báo</strong>Filter bảng phải đặt không đúng chỗ có thể vô tình biến LEFT JOIN thành INNER JOIN.</div>
+</section>
+
+<!-- BƯỚC 12 -->
+<section id="b12">
+  <h2><span class="num">Bước 12</span>Bẫy COUNT(*) sau LEFT JOIN</h2>
+  <p><b>Mục đích:</b> Hiểu vì sao row NULL phía phải vẫn là một row output. Ví dụ đếm số order mỗi customer.</p>
+  <span class="label bad">SAI nếu muốn customer chưa mua = 0</span>
+  <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    COUNT(*) AS total_orders
+FROM core.customers c
+LEFT JOIN core.orders o
+    ON o.customer_id = c.customer_id
+GROUP BY c.customer_id;</code></pre></div>
+  <p>Customer chưa có order vẫn có một output row do LEFT JOIN.</p>
+  <span class="label ok">ĐÚNG</span>
+  <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    COUNT(o.order_id) AS total_orders
+FROM core.customers c
+LEFT JOIN core.orders o
+    ON o.customer_id = c.customer_id
+GROUP BY c.customer_id;</code></pre></div>
+  <p><code>COUNT(o.order_id)</code> bỏ qua NULL.</p>
+  <div class="callout warn">
+    <strong>Lưu ý schema</strong>
+    <code>payments</code> không có <code>customer_id</code> trực tiếp. Nếu cần payment theo customer, phải đi:
+    <div class="hflow"><span class="s2">customers</span><span class="ar">→</span><span class="s2">orders</span><span class="ar">→</span><span class="s2">payments</span></div>
+    Không viết <code>customers LEFT JOIN payments USING(customer_id)</code> vì <code>payments</code> không có <code>customer_id</code> trong schema hiện tại.
+  </div>
+</section>
+
+<!-- BƯỚC 13 -->
+<section id="b13">
+  <h2><span class="num">Bước 13</span>Bẫy JOIN 1:N và double-count</h2>
+  <div class="callout bad"><strong>Đây là lỗi nghiêm trọng nhất của Lab 2.</strong></div>
+  <p><code>core.orders</code> = 1 row / order; <code>core.order_items</code> = N row / order. Một order <code>ORD001</code> có <code>order_total = 1,000,000</code> và 3 order_items. Sau JOIN:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>order_id</th><th style="text-align:right">order_total</th><th>item</th></tr></thead>
+    <tbody>
+      <tr><td>ORD001</td><td class="r">1,000,000</td><td>item X</td></tr>
+      <tr><td>ORD001</td><td class="r">1,000,000</td><td>item Y</td></tr>
+      <tr><td>ORD001</td><td class="r">1,000,000</td><td>item Z</td></tr>
+    </tbody>
+  </table></div>
+  <p>Nếu chạy query sau thì <code>order_total</code> bị lặp:</p>
+  <span class="label bad">SAI</span>
+  <div class="code"><pre class="sql"><code>SELECT
+    SUM(o.order_total)
+FROM core.orders o
+JOIN core.order_items oi
+    ON oi.order_id = o.order_id
+WHERE o.order_status = 'completed';</code></pre></div>
+  <div class="callout warn">
+    <strong>Quy tắc vàng</strong>
+    KHÔNG SUM/AVG cột aggregate-level của bảng "1" sau khi JOIN sang bảng "N" nếu chưa xử lý duplication.
+  </div>
+  <div class="grid g2">
+    <div>
+      <span class="label ok">ĐÚNG 1 · revenue theo order grain</span>
+      <div class="code"><pre class="sql"><code>SELECT
+    SUM(order_total) AS revenue
+FROM core.orders
+WHERE order_status = 'completed';</code></pre></div>
+    </div>
+    <div>
+      <span class="label ok">ĐÚNG 2 · bắt buộc JOIN để lấy product/category</span>
+      <div class="code"><pre class="sql"><code>SELECT
+    SUM(
+        oi.quantity * oi.unit_price
+        - oi.discount_amount
+    ) AS revenue
+FROM core.orders o
+JOIN core.order_items oi
+    ON oi.order_id = o.order_id
+WHERE o.order_status = 'completed';</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- BƯỚC 14 -->
+<section id="b14">
+  <h2><span class="num">Bước 14</span>Lab 2A: Business questions 1–4</h2>
+  <p><b>Mục đích:</b> Luyện filter, aggregate và monthly KPI. Trước mỗi query, ghi comment:</p>
+  <div class="code"><pre class="sql"><code>-- Metric:
+-- Grain:
+-- Source:
+-- Filter:
+-- Validation:</code></pre></div>
+
+  <div class="q">
+    <h3><span class="tag">Q1</span>Active customers by city</h3>
+    <p>Business question: Thành phố nào có nhiều active customers nhất?</p>
+    <div class="code"><pre class="sql"><code>SELECT
+    city,
+    COUNT(*) AS active_customers
+FROM core.customers
+WHERE status = 'active'
+GROUP BY city
+ORDER BY active_customers DESC, city;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / city</b></div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q2</span>Top 10 products by unit_price</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    product_id,
+    product_name,
+    unit_price
+FROM core.products
+ORDER BY unit_price DESC
+LIMIT 10;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / product</b></div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q3</span>Orders by day and status</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    order_date::date AS order_day,
+    order_status,
+    COUNT(*) AS total_orders
+FROM core.orders
+GROUP BY 1, 2
+ORDER BY 1, 2;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / day / status</b></div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q4</span>Revenue &amp; AOV completed orders by month</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    date_trunc('month', order_date)::date AS month,
+    COUNT(*) AS orders,
+    SUM(order_total) AS revenue,
+    AVG(order_total) AS aov
+FROM core.orders
+WHERE order_status = 'completed'
+GROUP BY 1
+ORDER BY 1;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / month</b> · Validation: tổng revenue các tháng phải bằng total completed revenue.</div>
+  </div>
+</section>
+
+<!-- BƯỚC 15 -->
+<section id="b15">
+  <h2><span class="num">Bước 15</span>Lab 2B: Business questions 5–6</h2>
+  <div class="q">
+    <h3><span class="tag">Q5</span>Revenue by category</h3>
+    <p>Business problem: doanh thu completed orders theo category. Vì category nằm ở product nên phải JOIN:</p>
+    <div class="hflow"><span class="s2">orders</span><span class="ar">→</span><span class="s2">order_items</span><span class="ar">→</span><span class="s2">products</span><span class="ar">→</span><span class="s2">categories</span></div>
+    <div class="code"><pre class="sql"><code>SELECT
+    c.category_name,
+    SUM(
+        oi.quantity * oi.unit_price
+        - oi.discount_amount
+    ) AS revenue
+FROM core.orders o
+JOIN core.order_items oi
+    ON oi.order_id = o.order_id
+JOIN core.products p
+    ON p.product_id = oi.product_id
+JOIN core.categories c
+    ON c.category_id = p.category_id
+WHERE o.order_status = 'completed'
+GROUP BY c.category_name
+ORDER BY revenue DESC;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / category</b></div>
+    <div class="callout warn"><strong>Điểm quan trọng</strong>Không dùng <code>SUM(o.order_total)</code> ở grain order_item.</div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q6</span>Top 10 customers by completed revenue</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    c.full_name,
+    COUNT(DISTINCT o.order_id) AS orders,
+    SUM(o.order_total) AS revenue
+FROM core.customers c
+JOIN core.orders o
+    ON o.customer_id = c.customer_id
+WHERE o.order_status = 'completed'
+GROUP BY c.customer_id, c.full_name
+ORDER BY revenue DESC
+LIMIT 10;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / customer</b></div>
+    <p><b>Tại sao <code>SUM(order_total)</code> an toàn ở đây?</b> Vì JOIN customers → orders là 1 customer : N orders, nhưng mỗi order chỉ xuất hiện một lần sau JOIN customers–orders.</p>
+    <div class="callout warn"><strong>Cảnh báo</strong>Nếu JOIN thêm <code>order_items</code> thì <code>order_total</code> sẽ bị lặp.</div>
+  </div>
+</section>
+
+<!-- BƯỚC 16 -->
+<section id="b16">
+  <h2><span class="num">Bước 16</span>Lab 2C: Business questions 7–9</h2>
+  <div class="q">
+    <h3><span class="tag">Q7</span>Top 10 products by quantity sold</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    p.product_id,
+    p.product_name,
+    SUM(oi.quantity) AS quantity_sold
+FROM core.orders o
+JOIN core.order_items oi
+    ON oi.order_id = o.order_id
+JOIN core.products p
+    ON p.product_id = oi.product_id
+WHERE o.order_status = 'completed'
+GROUP BY p.product_id, p.product_name
+ORDER BY quantity_sold DESC
+LIMIT 10;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / product</b></div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q8</span>Payment success rate</h3>
+    <p>Business metric: <code>successful payments / all payments * 100</code></p>
+    <div class="code"><pre class="sql"><code>SELECT
+    ROUND(
+        100.0
+        * COUNT(*) FILTER (
+            WHERE payment_status = 'success'
+        )
+        / NULLIF(COUNT(*), 0),
+        2
+    ) AS payment_success_rate_pct
+FROM core.payments;</code></pre></div>
+    <p><b>Tại sao dùng NULLIF?</b> Nếu <code>COUNT(*) = 0</code>, <code>NULLIF(COUNT(*), 0)</code> trả NULL thay vì chia cho 0.</p>
+    <div class="grain">Expected baseline: <b>khoảng 89.77%</b></div>
+  </div>
+
+  <div class="q">
+    <h3><span class="tag">Q9</span>Revenue by channel</h3>
+    <div class="code"><pre class="sql"><code>SELECT
+    channel,
+    SUM(order_total) AS revenue
+FROM core.orders
+WHERE order_status = 'completed'
+GROUP BY channel
+ORDER BY revenue DESC;</code></pre></div>
+    <div class="grain">Grain: <b>1 row / channel</b></div>
+  </div>
+</section>
+
+<!-- BƯỚC 17 -->
+<section id="b17">
+  <h2><span class="num">Bước 17</span>Lab 2D: Q10 Reconciliation</h2>
+  <p><b>Mục đích:</b> Chứng minh doanh thu không bị sai do JOIN. <b>Đây là query quan trọng nhất Lab 2.</b></p>
+  <p>Tính completed revenue theo 2 hướng độc lập:</p>
+  <div class="grid g2">
+    <div class="card"><b>1. Order side</b><br><code>SUM(order_total)</code></div>
+    <div class="card"><b>2. Item side</b><br><code>SUM(quantity * unit_price - discount_amount)</code></div>
+  </div>
+  <div class="code"><pre class="sql"><code>WITH order_side AS (
+    SELECT
+        SUM(order_total) AS revenue
+    FROM core.orders
+    WHERE order_status = 'completed'
+),
+
+item_side AS (
+    SELECT
+        SUM(
+            oi.quantity * oi.unit_price
+            - oi.discount_amount
+        ) AS revenue
+    FROM core.orders o
+    JOIN core.order_items oi
+        ON oi.order_id = o.order_id
+    WHERE o.order_status = 'completed'
+)
+
+SELECT
+    o.revenue AS order_revenue,
+    i.revenue AS item_revenue,
+    o.revenue - i.revenue AS difference
+FROM order_side o
+CROSS JOIN item_side i;</code></pre></div>
+  <p>Expected: <code>difference = 0</code></p>
+  <div class="callout ok"><strong>Lý do</strong>Hai cách độc lập cùng ra một tổng là bằng chứng mạnh rằng logic revenue đúng.</div>
+</section>
+
+<!-- BƯỚC 18 -->
+<section id="b18">
+  <h2><span class="num">Bước 18</span>Kiểm tra baseline KPI</h2>
+  <h3>18.1 Completed orders <small style="color:var(--muted);font-weight:400">— expected 3880</small></h3>
+  <div class="code"><pre class="sql"><code>SELECT COUNT(*) AS completed_orders
+FROM core.orders
+WHERE order_status = 'completed';</code></pre></div>
+  <h3>18.2 Completed revenue <small style="color:var(--muted);font-weight:400">— expected 48077944000</small></h3>
+  <div class="code"><pre class="sql"><code>SELECT SUM(order_total) AS completed_revenue
+FROM core.orders
+WHERE order_status = 'completed';</code></pre></div>
+  <h3>18.3 AOV <small style="color:var(--muted);font-weight:400">— expected ≈ 12391222.68</small></h3>
+  <div class="code"><pre class="sql"><code>SELECT AVG(order_total) AS aov
+FROM core.orders
+WHERE order_status = 'completed';</code></pre></div>
+  <h3>18.4 Payment success rate <small style="color:var(--muted);font-weight:400">— expected 89.77</small></h3>
+  <div class="code"><pre class="sql"><code>SELECT
+    ROUND(
+        100.0
+        * COUNT(*) FILTER (
+            WHERE payment_status = 'success'
+        )
+        / NULLIF(COUNT(*), 0),
+        2
+    ) AS payment_success_rate_pct
+FROM core.payments;</code></pre></div>
+  <h3>18.5 Revenue reconciliation <small style="color:var(--muted);font-weight:400">— expected difference = 0</small></h3>
+  <p>Dùng query Q10 ở <a href="#b17">Bước 17</a>.</p>
+</section>
+
+<!-- BƯỚC 19 -->
+<section id="b19">
+  <h2><span class="num">Bước 19</span>Validation sau mỗi JOIN</h2>
+  <p><b>Mục đích:</b> Không tin JOIN chỉ vì query chạy.</p>
+  <div class="grid g2">
+    <div><b>Trước JOIN</b>
+      <div class="code"><pre class="sql"><code>SELECT COUNT(*)
+FROM core.orders;</code></pre></div></div>
+    <div><b>Sau JOIN order → items</b>
+      <div class="code"><pre class="sql"><code>SELECT COUNT(*)
+FROM core.orders o
+JOIN core.order_items oi
+  ON oi.order_id = o.order_id;</code></pre></div></div>
+  </div>
+  <p><b>Hỏi:</b> "Tại sao row count tăng?" → <b>Vì grain chuyển từ order sang order_item.</b></p>
+  <p>Kiểm tra duplicate order sau JOIN:</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    o.order_id,
+    COUNT(*) AS joined_rows
+FROM core.orders o
+JOIN core.order_items oi
+    ON oi.order_id = o.order_id
+GROUP BY o.order_id
+HAVING COUNT(*) &gt; 1
+ORDER BY joined_rows DESC
+LIMIT 20;</code></pre></div>
+  <div class="callout">
+    <strong>Đây không phải lỗi JOIN.</strong>
+    Đây là behavior tự nhiên của quan hệ 1:N. Lỗi chỉ xuất hiện khi ta quên grain đã thay đổi rồi SUM cột của bảng <code>orders</code>.
+  </div>
+</section>
+
+<!-- BƯỚC 20 -->
+<section id="b20">
+  <h2><span class="num">Bước 20</span>Validation NULL sau LEFT JOIN</h2>
+  <p>Ví dụ: tìm customer chưa có order.</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    c.customer_id,
+    c.full_name
+FROM core.customers c
+LEFT JOIN core.orders o
+    ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL;</code></pre></div>
+  <p>Đếm:</p>
+  <div class="code"><pre class="sql"><code>SELECT
+    COUNT(*) AS customers_without_orders
+FROM core.customers c
+LEFT JOIN core.orders o
+    ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL;</code></pre></div>
+  <div class="callout"><strong>Lý do</strong>NULL ở bảng phải sau LEFT JOIN thường mang business meaning: "không có record matching".</div>
+</section>
+
+<!-- BƯỚC 21 -->
+<section id="b21">
+  <h2><span class="num">Bước 21</span>Checkpoint cuối Lab 2</h2>
+  <p>Học viên tự tick:</p>
+  <div class="progress"><span class="count"></span><div class="bar"><i></i></div></div>
+  <ul class="checklist">
+    <li><label><input type="checkbox"><span>Docker/PostgreSQL healthy.</span></label></li>
+    <li><label><input type="checkbox"><span>DBeaver kết nối được.</span></label></li>
+    <li><label><input type="checkbox"><span>Seed row counts đúng: categories=20, customers=1000, products=500, orders=5000, order_items=12717, payments=4517.</span></label></li>
+    <li><label><input type="checkbox"><span>Hiểu grain của 5 bảng nghiệp vụ chính.</span></label></li>
+    <li><label><input type="checkbox"><span>Hoàn thành 10 business questions.</span></label></li>
+    <li><label><input type="checkbox"><span>Có ít nhất 3 multi-table JOIN queries.</span></label></li>
+    <li><label><input type="checkbox"><span>Không <code>SUM(order_total)</code> sai sau JOIN order_items.</span></label></li>
+    <li><label><input type="checkbox"><span>Completed orders = 3880.</span></label></li>
+    <li><label><input type="checkbox"><span>Completed revenue = 48,077,944,000.</span></label></li>
+    <li><label><input type="checkbox"><span>AOV ≈ 12,391,222.68.</span></label></li>
+    <li><label><input type="checkbox"><span>Payment success ≈ 89.77%.</span></label></li>
+    <li><label><input type="checkbox"><span>Q10 reconciliation difference = 0.</span></label></li>
+    <li><label><input type="checkbox"><span>Query quan trọng có comment metric/grain/validation.</span></label></li>
+    <li><label><input type="checkbox"><span>Commit session-02.</span></label></li>
+  </ul>
+</section>
+
+<!-- BƯỚC 22 -->
+<section id="b22">
+  <h2><span class="num">Bước 22</span>Commit Git</h2>
+  <div class="code"><pre class="sh"><code>git status
+
+git add .
+
+git commit -m "session-02: business sql analytics"</code></pre></div>
+  <div class="callout"><strong>Lý do</strong>Lưu một baseline SQL analytics đã được kiểm chứng trước Buổi 3.</div>
+</section>
+
+<!-- LỖI THƯỜNG GẶP -->
+<section id="loi">
+  <h2>Các lỗi thường gặp và cách xử lý</h2>
+  <details open><summary>1. SQL chạy nhưng KPI không khớp baseline</summary>
+    <p>Kiểm tra: seed row counts; status filter; grain; JOIN cardinality; duplicate rows.</p></details>
+  <details><summary>2. Revenue tăng bất thường sau JOIN</summary>
+    <p>Nguyên nhân phổ biến: <code>orders</code> 1:N <code>order_items</code> và dùng <code>SUM(o.order_total)</code> sau JOIN.</p>
+    <p>Giải pháp: tính ở orders grain; hoặc tính item net ở order_items grain.</p></details>
+  <details><summary>3. <code>WHERE SUM(...)</code> báo lỗi</summary>
+    <p>Sai: <code>WHERE SUM(order_total) &gt; ...</code> · Đúng: <code>HAVING SUM(order_total) &gt; ...</code></p></details>
+  <details><summary>4. Customer chưa mua hàng vẫn COUNT(*) = 1 sau LEFT JOIN</summary>
+    <p>Nguyên nhân: <code>COUNT(*)</code> đếm output row. Giải pháp: <code>COUNT(o.order_id)</code></p></details>
+  <details><summary>5. <code>column = NULL</code> không trả record</summary>
+    <p>Đúng: <code>column IS NULL</code></p></details>
+  <details><summary>6. LEFT JOIN nhưng record missing lại biến mất</summary>
+    <div class="code"><pre class="sql"><code>FROM customers c
+LEFT JOIN orders o ...
+WHERE o.order_status = 'completed'</code></pre></div>
+    <p>Điều kiện WHERE phía bảng phải loại NULL, có thể làm logic gần giống INNER JOIN. Phải kiểm tra business meaning trước khi đặt filter.</p></details>
+  <details><summary>7. COUNT order sai sau JOIN item</summary>
+    <p>Dùng <code>COUNT(DISTINCT o.order_id)</code> nếu output grain có nhiều row/order.</p></details>
+  <details><summary>8. Payment theo customer JOIN sai</summary>
+    <p>Schema hiện tại: <code>payments.order_id → orders.order_id</code>. Không có <code>payments.customer_id</code>. Muốn payment theo customer phải JOIN: customers → orders → payments.</p></details>
+  <details><summary>9. Dùng COALESCE vô điều kiện</summary>
+    <p>Không phải NULL nào cũng nên biến thành 0. Hỏi: <i>"0 có thực sự là business meaning của missing value này không?"</i> Nếu không: giữ NULL.</p></details>
+  <details><summary>10. Query top customer lặp customer</summary>
+    <p>Kiểm tra GROUP BY <code>customer_id, full_name</code> và grain phải là 1 row / customer.</p></details>
+</section>
+
+<!-- GIẢNG VIÊN -->
+<section id="gv">
+  <h2>Phần giảng viên – 10 business questions reference</h2>
+  <div class="callout warn"><strong>KHÔNG PHÁT TRƯỚC CHECKPOINT</strong></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>Business question</th></tr></thead>
+    <tbody>
+      <tr><td>Q1</td><td>Active customers by city.</td></tr>
+      <tr><td>Q2</td><td>Top 10 products by unit_price.</td></tr>
+      <tr><td>Q3</td><td>Orders by day and status.</td></tr>
+      <tr><td>Q4</td><td>Revenue &amp; AOV completed orders by month.</td></tr>
+      <tr><td>Q5</td><td>Revenue by category.</td></tr>
+      <tr><td>Q6</td><td>Top 10 customers by completed revenue.</td></tr>
+      <tr><td>Q7</td><td>Top 10 products by quantity sold.</td></tr>
+      <tr><td>Q8</td><td>Payment success rate.</td></tr>
+      <tr><td>Q9</td><td>Completed revenue by channel.</td></tr>
+      <tr><td>Q10</td><td>Reconcile order_total with item net amount.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz">
+  <h2>Câu hỏi kiểm tra nhanh cuối lab</h2>
+  <p style="color:var(--muted);font-size:14px">Bấm vào câu hỏi để xem đáp án.</p>
+  <details><summary>1. WHERE hay HAVING lọc trước GROUP BY?</summary><p>WHERE</p></details>
+  <details><summary>2. LEFT JOIN giữ toàn bộ dòng của bảng nào?</summary><p>Bảng bên trái.</p></details>
+  <details><summary>3. COUNT(*) đếm gì?</summary><p>Số output rows.</p></details>
+  <details><summary>4. COUNT(column) khác COUNT(*) thế nào?</summary><p>COUNT(column) bỏ qua NULL của column.</p></details>
+  <details><summary>5. AOV là gì?</summary><p>Revenue / số orders, hoặc <code>AVG(order_total)</code> ở đúng order grain.</p></details>
+  <details><summary>6. JOIN 1:N có thể gây vấn đề gì?</summary><p>Nhân bản row của bảng 1.</p></details>
+  <details><summary>7. Có được SUM(order_total) sau JOIN order_items không?</summary><p>Không, nếu chưa xử lý duplication.</p></details>
+  <details><summary>8. Vì sao reconciliation quan trọng?</summary><p>SQL đúng cú pháp không chứng minh KPI đúng.</p></details>
+</section>
+
+<!-- LỜI CHỐT -->
+<section id="chot">
+  <h2>Lời chốt Lab 2 gợi ý cho giảng viên</h2>
+  <blockquote>
+    <p>"Điểm quan trọng nhất của Buổi 2 không phải là các em nhớ bao nhiêu hàm SQL.</p>
+    <p>Một query tốt phải trả lời được ba câu: mình đang tính metric gì, một dòng kết quả đại diện cho gì, và mình kiểm chứng con số đó bằng cách nào.</p>
+    <p>Đặc biệt, JOIN là nơi SQL analytics rất dễ sai mà không báo lỗi. Một query có thể chạy rất nhanh, không có syntax error, nhưng doanh thu vẫn sai gấp hai hoặc ba lần nếu grain bị thay đổi.</p>
+    <p>Từ hôm nay, với mỗi KPI quan trọng, các em hãy hình thành thói quen: <b>Business Question → Metric → Grain → SQL → Validation</b>.</p>
+    <p>Đó là tư duy chúng ta sẽ dùng tiếp ở Buổi 3 với CTE, Window Function, Customer Analytics và Cohort."</p>
+  </blockquote>
+</section>
+
+<!-- FLOW -->
+<section id="flow">
+  <h2>Tóm tắt luồng Lab 2</h2>
+  <div class="flow">
+    <div class="step">Lab 1 database</div><div class="arrow">↓</div>
+    <div class="step">Verify PostgreSQL + schema core</div><div class="arrow">↓</div>
+    <div class="step">Verify seed baseline</div><div class="arrow">↓</div>
+    <div class="step">Understand table grain</div><div class="arrow">↓</div>
+    <div class="step">Business Question</div><div class="arrow">↓</div>
+    <div class="step">Metric + Grain + Source</div><div class="arrow">↓</div>
+    <div class="step">SELECT / WHERE / NULL</div><div class="arrow">↓</div>
+    <div class="step">Aggregate / GROUP BY / HAVING</div><div class="arrow">↓</div>
+    <div class="step">INNER JOIN / LEFT JOIN</div><div class="arrow">↓</div>
+    <div class="step">Check 1:N row multiplication</div><div class="arrow">↓</div>
+    <div class="step">Solve 10 business questions</div><div class="arrow">↓</div>
+    <div class="step">Reconcile revenue</div><div class="arrow">↓</div>
+    <div class="step">Compare baseline KPI</div><div class="arrow">↓</div>
+    <div class="step">Git Commit session-02</div>
+  </div>
+  <p style="color:var(--muted);text-align:center;margin-top:20px">— END OF LAB 2 GUIDE —</p>
+</section>
+</main>
+</div>
+
+<div class="toolbar">
+  <button class="menu-btn" id="menuBtn">☰ Mục lục</button>
+  <button id="themeBtn">◐ Giao diện</button>
+</div>
+
+<script>
+(function(){
+  // SQL syntax highlight
+  var KW = "SELECT|FROM|WHERE|AND|OR|NOT|IS|NULL|AS|ORDER|BY|GROUP|HAVING|LIMIT|JOIN|INNER|LEFT|RIGHT|ON|USING|UNION|ALL|WITH|CROSS|DISTINCT|DESC|ASC|FILTER|TRUNCATE|TABLE|CASCADE";
+  var FN = "COUNT|SUM|AVG|MIN|MAX|ROUND|NULLIF|COALESCE|date_trunc|current_database";
+  var re = new RegExp("(--[^\\n]*)|('(?:[^']|'')*')|\\b(" + FN + ")\\b(?=\\s*\\()|\\b(" + KW + ")\\b|\\b(\\d+(?:\\.\\d+)?)\\b", "gi");
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  document.querySelectorAll("pre.sql code").forEach(function(el){
+    var src = el.textContent, out = "", last = 0, m;
+    re.lastIndex = 0;
+    while((m = re.exec(src))){
+      out += esc(src.slice(last, m.index));
+      var cls = m[1] ? "c" : m[2] ? "s" : m[3] ? "f" : m[4] ? "k" : "n";
+      out += '<span class="'+cls+'">' + esc(m[0]) + "</span>";
+      last = re.lastIndex;
+    }
+    el.innerHTML = out + esc(src.slice(last));
+  });
+
+  // Copy buttons
+  document.querySelectorAll(".code").forEach(function(box){
+    var pre = box.querySelector("pre");
+    if(pre.classList.contains("out")) return;
+    var b = document.createElement("button");
+    b.className = "copy"; b.textContent = "Copy";
+    b.onclick = function(){
+      var t = pre.textContent;
+      var done = function(){ b.textContent = "Đã copy"; setTimeout(function(){ b.textContent = "Copy"; }, 1200); };
+      if(navigator.clipboard){ navigator.clipboard.writeText(t).then(done, function(){}); }
+      else { var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");done();}catch(e){} ta.remove(); }
+    };
+    box.appendChild(b);
+  });
+
+  // Checklist progress
+  document.querySelectorAll(".checklist").forEach(function(list){
+    var prog = list.previousElementSibling;
+    var boxes = list.querySelectorAll("input");
+    function upd(){
+      var n = 0; boxes.forEach(function(x){ if(x.checked) n++; });
+      if(prog && prog.classList.contains("progress")){
+        prog.querySelector(".count").textContent = n + "/" + boxes.length;
+        prog.querySelector("i").style.width = (100*n/boxes.length) + "%";
+      }
+    }
+    boxes.forEach(function(x){ x.addEventListener("change", upd); });
+    upd();
+  });
+
+  // Active TOC link
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var map = {}; links.forEach(function(a){ map[a.getAttribute("href").slice(1)] = a; });
+  if("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove("active"); });
+          var a = map[e.target.id]; if(a) a.classList.add("active");
+        }
+      });
+    }, {rootMargin:"-10% 0px -80% 0px"});
+    document.querySelectorAll("main section, main header").forEach(function(s){ if(s.id) io.observe(s); });
+  }
+
+  // Mobile menu
+  var toc = document.getElementById("toc");
+  document.getElementById("menuBtn").onclick = function(){ toc.classList.toggle("open"); };
+  links.forEach(function(a){ a.addEventListener("click", function(){ toc.classList.remove("open"); }); });
+
+  // Theme toggle
+  document.getElementById("themeBtn").onclick = function(){
+    var root = document.documentElement;
+    var cur = root.getAttribute("data-theme");
+    var dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  };
+})();
+</script>
+</body>
+</html>
