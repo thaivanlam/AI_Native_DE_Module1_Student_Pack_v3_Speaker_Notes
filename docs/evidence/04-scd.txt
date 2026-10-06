@@ -1,0 +1,160 @@
+# Minh chứng 2.1 — Advanced Mart Design: SCD Type 2 cho mart.dim_product
+# File script  : sql/student/04_bonus_scd.sql (DDL thêm valid_from/valid_to/is_current + demo đổi giá)
+# Container    : ecommerce-postgres — db ecommerce, schema mart, user de_user
+# Thời điểm    : 2026-10-06 18:14 +0700
+# Lệnh         : docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1 < sql/student/04_bonus_scd.sql
+#
+# Kịch bản demo: sản phẩm PRD000297 tăng giá niêm yết 10% (7,950,000 -> 8,745,000).
+#   D1  Trước: 1 phiên bản (product_key 297), is_current = t.
+#   D2  Sau  : 2 phiên bản — 297 bị đóng (valid_to = hôm qua, is_current = f),
+#              501 mở mới (valid_from = hôm nay, giá mới, is_current = t).
+#   D3  37 dòng fact cũ vẫn trỏ về product_key 297 (giá cũ) -> lịch sử được giữ; bản mới chưa có dòng bán.
+#   D4  Tra cứu theo ngày: 2026-06-29 ra bản 297, hôm nay ra bản 501.
+#   D5  501 dòng / 500 product_id, mỗi product_id đúng 1 dòng is_current.
+#   D6  Chạy lại bước đóng phiên bản -> UPDATE 0 (idempotent).
+#   D7  Demo kết thúc bằng ROLLBACK: OLTP và mart trở lại như cũ (việc đổi giá chỉ là giả lập),
+#       còn phần DDL (3 cột + ràng buộc SCD2) được giữ lại.
+#   Ghi chú: file này là lần chạy thứ 2 nên các lệnh DDL chỉ báo NOTICE "already exists, skipping".
+
+ALTER TABLE mart.dim_product
+  ADD COLUMN IF NOT EXISTS valid_from DATE NOT NULL DEFAULT DATE '1900-01-01',
+  ADD COLUMN IF NOT EXISTS valid_to DATE NOT NULL DEFAULT DATE '9999-12-31',
+  ADD COLUMN IF NOT EXISTS is_current BOOLEAN NOT NULL DEFAULT TRUE;
+NOTICE:  column "valid_from" of relation "dim_product" already exists, skipping
+NOTICE:  column "valid_to" of relation "dim_product" already exists, skipping
+NOTICE:  column "is_current" of relation "dim_product" already exists, skipping
+ALTER TABLE
+ALTER TABLE mart.dim_product DROP CONSTRAINT IF EXISTS dim_product_product_id_key;
+NOTICE:  constraint "dim_product_product_id_key" of relation "dim_product" does not exist, skipping
+ALTER TABLE
+CREATE UNIQUE INDEX IF NOT EXISTS uq_dim_product_current
+  ON mart.dim_product(product_id) WHERE is_current;
+NOTICE:  relation "uq_dim_product_current" already exists, skipping
+CREATE INDEX
+ALTER TABLE mart.dim_product DROP CONSTRAINT IF EXISTS dim_product_version_key;
+ALTER TABLE
+ALTER TABLE mart.dim_product ADD CONSTRAINT dim_product_version_key
+  UNIQUE (product_id, valid_from);
+ALTER TABLE
+ALTER TABLE mart.dim_product DROP CONSTRAINT IF EXISTS dim_product_valid_range_check;
+ALTER TABLE
+ALTER TABLE mart.dim_product ADD CONSTRAINT dim_product_valid_range_check
+  CHECK (valid_to >= valid_from);
+ALTER TABLE
+BEGIN;
+BEGIN
+SELECT product_key, product_id, list_price, cost_price, valid_from, valid_to, is_current
+FROM mart.dim_product
+WHERE product_id = 'PRD000297'
+ORDER BY valid_from;
+ product_key | product_id | list_price | cost_price | valid_from |  valid_to  | is_current 
+-------------+------------+------------+------------+------------+------------+------------
+         297 | PRD000297  | 7950000.00 | 6644000.00 | 1900-01-01 | 9999-12-31 | t
+(1 row)
+
+UPDATE core.products
+SET unit_price = ROUND(unit_price * 1.10, 0),
+    updated_at = NOW()
+WHERE product_id = 'PRD000297';
+UPDATE 1
+UPDATE mart.dim_product d
+SET valid_to = (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - 1,
+    is_current = FALSE
+FROM core.products p
+WHERE p.product_id = d.product_id
+  AND d.is_current
+  AND (d.list_price <> p.unit_price
+       OR d.cost_price <> p.cost_price
+       OR d.category_id <> p.category_id);
+UPDATE 1
+INSERT INTO mart.dim_product
+  (product_id, product_name, category_id, category, parent_category,
+   list_price, cost_price, status, valid_from, valid_to, is_current)
+SELECT p.product_id, p.product_name, p.category_id, c.category_name,
+       COALESCE(pc.category_name, c.category_name),
+       p.unit_price, p.cost_price, p.status,
+       CASE WHEN EXISTS (SELECT 1 FROM mart.dim_product o WHERE o.product_id = p.product_id)
+            THEN (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+            ELSE DATE '1900-01-01'
+       END,
+       DATE '9999-12-31',
+       TRUE
+FROM core.products p
+JOIN core.categories c ON c.category_id = p.category_id
+LEFT JOIN core.categories pc ON pc.category_id = c.parent_category_id
+WHERE NOT EXISTS (SELECT 1 FROM mart.dim_product d
+                  WHERE d.product_id = p.product_id AND d.is_current);
+INSERT 0 1
+SELECT product_key, product_id, list_price, cost_price, valid_from, valid_to, is_current
+FROM mart.dim_product
+WHERE product_id = 'PRD000297'
+ORDER BY valid_from;
+ product_key | product_id | list_price | cost_price | valid_from |  valid_to  | is_current 
+-------------+------------+------------+------------+------------+------------+------------
+         297 | PRD000297  | 7950000.00 | 6644000.00 | 1900-01-01 | 2026-10-05 | f
+         502 | PRD000297  | 8745000.00 | 6644000.00 | 2026-10-06 | 9999-12-31 | t
+(2 rows)
+
+SELECT p.product_key, p.list_price, p.is_current,
+       COUNT(f.sales_key)          AS fact_rows,
+       COALESCE(SUM(f.quantity), 0) AS units_sold,
+       COALESCE(SUM(f.revenue), 0)  AS revenue
+FROM mart.dim_product p
+LEFT JOIN mart.fact_sales f ON f.product_key = p.product_key
+WHERE p.product_id = 'PRD000297'
+GROUP BY p.product_key, p.list_price, p.is_current
+ORDER BY p.product_key;
+ product_key | list_price | is_current | fact_rows | units_sold |   revenue    
+-------------+------------+------------+-----------+------------+--------------
+         297 | 7950000.00 | f          |        37 |         50 | 380010000.00
+         502 | 8745000.00 | t          |         0 |          0 |            0
+(2 rows)
+
+SELECT a.as_of, p.product_key, p.list_price, p.valid_from, p.valid_to
+FROM (VALUES (DATE '2026-06-29'),
+             ((NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)) AS a(as_of)
+JOIN mart.dim_product p
+  ON p.product_id = 'PRD000297'
+ AND a.as_of BETWEEN p.valid_from AND p.valid_to
+ORDER BY a.as_of;
+   as_of    | product_key | list_price | valid_from |  valid_to  
+------------+-------------+------------+------------+------------
+ 2026-06-29 |         297 | 7950000.00 | 1900-01-01 | 2026-10-05
+ 2026-10-06 |         502 | 8745000.00 | 2026-10-06 | 9999-12-31
+(2 rows)
+
+SELECT COUNT(*)                            AS dim_rows,
+       COUNT(DISTINCT product_id)          AS products,
+       COUNT(*) FILTER (WHERE is_current)  AS current_rows,
+       (SELECT COUNT(*) FROM (SELECT product_id FROM mart.dim_product
+                              GROUP BY product_id
+                              HAVING COUNT(*) FILTER (WHERE is_current) <> 1) x)
+                                           AS products_without_exactly_1_current
+FROM mart.dim_product;
+ dim_rows | products | current_rows | products_without_exactly_1_current 
+----------+----------+--------------+------------------------------------
+      501 |      500 |          500 |                                  0
+(1 row)
+
+UPDATE mart.dim_product d
+SET valid_to = (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - 1,
+    is_current = FALSE
+FROM core.products p
+WHERE p.product_id = d.product_id
+  AND d.is_current
+  AND (d.list_price <> p.unit_price
+       OR d.cost_price <> p.cost_price
+       OR d.category_id <> p.category_id);
+UPDATE 0
+ROLLBACK;
+ROLLBACK
+SELECT d.product_key, d.product_id, d.list_price, p.unit_price AS oltp_unit_price,
+       d.valid_from, d.valid_to, d.is_current
+FROM mart.dim_product d
+JOIN core.products p ON p.product_id = d.product_id
+WHERE d.product_id = 'PRD000297';
+ product_key | product_id | list_price | oltp_unit_price | valid_from |  valid_to  | is_current 
+-------------+------------+------------+-----------------+------------+------------+------------
+         297 | PRD000297  | 7950000.00 |      7950000.00 | 1900-01-01 | 9999-12-31 | t
+(1 row)
+
