@@ -1,0 +1,154 @@
+# Minh chứng 1.3 — Data Loading: row counts + đối soát OLTP <-> Data Mart
+# File scripts : sql/student/04_data_mart.sql (LOAD từ dòng 169, VERIFY từ dòng 297)
+# Container    : ecommerce-postgres — db ecommerce, nguồn schema core, đích schema mart, user de_user
+# Thời điểm    : 2026-10-06 16:48 +0700
+# Lệnh         : docker exec -i ecommerce-postgres psql -U de_user -d ecommerce -e -v ON_ERROR_STOP=1 (phần VERIFY của file)
+# Quy ước      : ngày/tháng theo giờ Asia/Ho_Chi_Minh; revenue dòng hàng = quantity*unit_price - discount_amount;
+#                mart nạp TẤT CẢ trạng thái đơn (kể cả cancelled), lọc trạng thái qua dim_order_status khi viết KPI.
+
+# ---------------------------------------------------------------------
+# TÓM TẮT
+# ---------------------------------------------------------------------
+# dim_date=180, dim_customer=1000, dim_product=500, dim_payment_method=5, dim_order_status=5, fact_sales=12717
+# oltp_revenue=61706432000.00, mart_revenue=61706432000.00, diff=0.00
+#
+# Giải thích diff = 0:
+#   - orders.order_total là doanh thu NET (đã trừ discount): 5000/5000 đơn có
+#     order_total = SUM(quantity*unit_price - discount_amount) của các dòng hàng.
+#   - fact.revenue tính đúng công thức đó ở grain dòng hàng, mọi phép tính là NUMERIC
+#     (không có làm tròn), và đã nạp đủ 12717/12717 dòng của 5000/5000 đơn -> khớp tuyệt đối.
+#   - Nếu so mart_revenue với GROSS (65562040000.00) thì chênh đúng bằng tổng discount
+#     3855608000.00 (xem V3) -> đó là chênh lệch do discount, không phải lỗi load.
+#   - Không có dòng nào bị rơi khi JOIN: đơn chưa có payment 'success' (945 đơn) được
+#     gán về dim_payment_method 'unknown' thay vì bị loại (xem V6).
+#
+# Kết quả load (psql): dim_date INSERT 0 180 | dim_customer INSERT 0 1000 | dim_product INSERT 0 500
+#   | dim_payment_method INSERT 0 1 + INSERT 0 4 | dim_order_status INSERT 0 5 | fact_sales INSERT 0 12717
+
+SELECT 'dim_date' AS mart_table,
+       (SELECT COUNT(*) FROM mart.dim_date) AS mart_rows,
+       (SELECT MAX(order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+             - MIN(order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 1
+        FROM core.orders) AS expected_rows,
+       'so ngay tu MIN den MAX(order_date)' AS expected_from
+UNION ALL
+SELECT 'dim_customer', (SELECT COUNT(*) FROM mart.dim_customer),
+       (SELECT COUNT(*) FROM core.customers), 'core.customers'
+UNION ALL
+SELECT 'dim_product', (SELECT COUNT(*) FROM mart.dim_product),
+       (SELECT COUNT(*) FROM core.products), 'core.products'
+UNION ALL
+SELECT 'dim_payment_method', (SELECT COUNT(*) FROM mart.dim_payment_method),
+       (SELECT COUNT(DISTINCT payment_method) + 1 FROM core.payments),
+       'DISTINCT core.payments.payment_method + 1 dong unknown'
+UNION ALL
+SELECT 'dim_order_status', (SELECT COUNT(*) FROM mart.dim_order_status),
+       (SELECT COUNT(*) FROM core.order_status), 'core.order_status'
+UNION ALL
+SELECT 'fact_sales', (SELECT COUNT(*) FROM mart.fact_sales),
+       (SELECT COUNT(*) FROM core.order_items), 'core.order_items';
+     mart_table     | mart_rows | expected_rows |                     expected_from                      
+--------------------+-----------+---------------+--------------------------------------------------------
+ dim_date           |       180 |           180 | so ngay tu MIN den MAX(order_date)
+ dim_customer       |      1000 |          1000 | core.customers
+ dim_product        |       500 |           500 | core.products
+ dim_payment_method |         5 |             5 | DISTINCT core.payments.payment_method + 1 dong unknown
+ dim_order_status   |         5 |             5 | core.order_status
+ fact_sales         |     12717 |         12717 | core.order_items
+(6 rows)
+
+SELECT o.oltp_revenue, m.mart_revenue, m.mart_revenue - o.oltp_revenue AS diff
+FROM (SELECT SUM(order_total) AS oltp_revenue FROM core.orders) o
+CROSS JOIN (SELECT SUM(revenue) AS mart_revenue FROM mart.fact_sales) m;
+  oltp_revenue  |  mart_revenue  | diff 
+----------------+----------------+------
+ 61706432000.00 | 61706432000.00 | 0.00
+(1 row)
+
+SELECT o.oltp_orders, m.mart_orders, m.mart_orders - o.oltp_orders AS diff
+FROM (SELECT COUNT(*) AS oltp_orders FROM core.orders) o
+CROSS JOIN (SELECT COUNT(DISTINCT order_id) AS mart_orders FROM mart.fact_sales) m;
+ oltp_orders | mart_orders | diff 
+-------------+-------------+------
+        5000 |        5000 |    0
+(1 row)
+
+SELECT o.oltp_gross, m.mart_gross, o.oltp_discount, m.mart_discount,
+       m.mart_gross - m.mart_discount AS mart_gross_minus_discount
+FROM (SELECT SUM(quantity * unit_price) AS oltp_gross,
+             SUM(discount_amount) AS oltp_discount
+      FROM core.order_items) o
+CROSS JOIN (SELECT SUM(gross_amount) AS mart_gross, SUM(discount) AS mart_discount
+            FROM mart.fact_sales) m;
+   oltp_gross   |   mart_gross   | oltp_discount | mart_discount | mart_gross_minus_discount 
+----------------+----------------+---------------+---------------+---------------------------
+ 65562040000.00 | 65562040000.00 | 3855608000.00 | 3855608000.00 |            61706432000.00
+(1 row)
+
+SELECT COALESCE(o.order_month, m.order_month) AS order_month,
+       o.oltp_revenue, m.mart_revenue,
+       COALESCE(m.mart_revenue, 0) - COALESCE(o.oltp_revenue, 0) AS diff
+FROM (SELECT to_char(order_date AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM') AS order_month,
+             SUM(order_total) AS oltp_revenue
+      FROM core.orders
+      GROUP BY 1) o
+FULL JOIN (SELECT d.year_month AS order_month, SUM(f.revenue) AS mart_revenue
+           FROM mart.fact_sales f
+           JOIN mart.dim_date d ON d.date_key = f.date_key
+           GROUP BY 1) m ON m.order_month = o.order_month
+ORDER BY 1;
+ order_month |  oltp_revenue  |  mart_revenue  | diff 
+-------------+----------------+----------------+------
+ 2026-01     | 10536701500.00 | 10536701500.00 | 0.00
+ 2026-02     |  9541207000.00 |  9541207000.00 | 0.00
+ 2026-03     | 11614566000.00 | 11614566000.00 | 0.00
+ 2026-04     |  9981032000.00 |  9981032000.00 | 0.00
+ 2026-05     | 10247839000.00 | 10247839000.00 | 0.00
+ 2026-06     |  9785086500.00 |  9785086500.00 | 0.00
+(6 rows)
+
+SELECT COALESCE(o.order_status, m.order_status) AS order_status,
+       o.oltp_orders, m.mart_orders, o.oltp_revenue, m.mart_revenue,
+       COALESCE(m.mart_revenue, 0) - COALESCE(o.oltp_revenue, 0) AS diff
+FROM (SELECT order_status, COUNT(*) AS oltp_orders, SUM(order_total) AS oltp_revenue
+      FROM core.orders
+      GROUP BY 1) o
+FULL JOIN (SELECT s.order_status, COUNT(DISTINCT f.order_id) AS mart_orders,
+                  SUM(f.revenue) AS mart_revenue
+           FROM mart.fact_sales f
+           JOIN mart.dim_order_status s ON s.order_status_key = f.order_status_key
+           GROUP BY 1) m ON m.order_status = o.order_status
+ORDER BY 1;
+ order_status | oltp_orders | mart_orders |  oltp_revenue  |  mart_revenue  | diff 
+--------------+-------------+-------------+----------------+----------------+------
+ cancelled    |         246 |         246 |  2986191500.00 |  2986191500.00 | 0.00
+ completed    |        3880 |        3880 | 48077944000.00 | 48077944000.00 | 0.00
+ confirmed    |         266 |         266 |  3129764500.00 |  3129764500.00 | 0.00
+ pending      |         147 |         147 |  1835276500.00 |  1835276500.00 | 0.00
+ shipped      |         461 |         461 |  5677255500.00 |  5677255500.00 | 0.00
+(5 rows)
+
+SELECT COALESCE(o.payment_method, m.payment_method) AS payment_method,
+       o.oltp_orders, m.mart_orders,
+       COALESCE(m.mart_orders, 0) - COALESCE(o.oltp_orders, 0) AS diff
+FROM (SELECT COALESCE(p.payment_method, 'unknown') AS payment_method,
+             COUNT(DISTINCT o.order_id) AS oltp_orders
+      FROM core.orders o
+      LEFT JOIN core.payments p
+        ON p.order_id = o.order_id AND p.payment_status = 'success'
+      GROUP BY 1) o
+FULL JOIN (SELECT pm.payment_method, COUNT(DISTINCT f.order_id) AS mart_orders
+           FROM mart.fact_sales f
+           JOIN mart.dim_payment_method pm
+             ON pm.payment_method_key = f.payment_method_key
+           GROUP BY 1) m ON m.payment_method = o.payment_method
+ORDER BY 1;
+ payment_method | oltp_orders | mart_orders | diff 
+----------------+-------------+-------------+------
+ bank_transfer  |        1013 |        1013 |    0
+ card           |        1027 |        1027 |    0
+ cash           |         999 |         999 |    0
+ e_wallet       |        1016 |        1016 |    0
+ unknown        |         945 |         945 |    0
+(5 rows)
+
