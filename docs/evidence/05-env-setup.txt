@@ -1,0 +1,121 @@
+# 05-env-setup — Minh chung khoi tao moi truong (Task 1.1)
+# Ngay chay: 2026-10-08 12:11:17
+# Ghi chu: .venv da duoc tao truoc do (2026-10-06) bang lenh ghi trong .venv/pyvenv.cfg; log nay kiem tra lai va cai dependencies.
+
+$ cat .venv/pyvenv.cfg
+home = C:\Users\MSI\AppData\Local\Python\pythoncore-3.11-64
+include-system-site-packages = false
+version = 3.11.9
+executable = C:\Users\MSI\AppData\Local\Python\pythoncore-3.11-64\python.exe
+command = C:\Users\MSI\AppData\Local\Python\pythoncore-3.11-64\python.exe -m venv D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv
+
+$ .venv\Scripts\Activate.ps1 ; python --version
+Python 3.11.9
+
+$ python -c "import sys; print(sys.prefix)"
+D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv
+
+$ python -m pip install -r requirements.txt
+Requirement already satisfied: pandas<3,>=2.2 in .\.venv\Lib\site-packages (from -r requirements.txt (line 1)) (2.3.3)
+Requirement already satisfied: requests<3,>=2.32 in .\.venv\Lib\site-packages (from -r requirements.txt (line 2)) (2.34.2)
+Requirement already satisfied: SQLAlchemy<3,>=2.0 in .\.venv\Lib\site-packages (from -r requirements.txt (line 3)) (2.1.3)
+Requirement already satisfied: psycopg<4,>=3.2 in .\.venv\Lib\site-packages (from psycopg[binary]<4,>=3.2->-r requirements.txt (line 4)) (3.3.6)
+Requirement already satisfied: python-dotenv<2,>=1.0 in .\.venv\Lib\site-packages (from -r requirements.txt (line 5)) (1.2.4)
+Requirement already satisfied: pytest<9,>=8 in .\.venv\Lib\site-packages (from -r requirements.txt (line 6)) (8.4.2)
+Requirement already satisfied: fastapi<1,>=0.115 in .\.venv\Lib\site-packages (from -r requirements.txt (line 7)) (0.142.2)
+Requirement already satisfied: uvicorn<1,>=0.30 in .\.venv\Lib\site-packages (from uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (0.54.0)
+Requirement already satisfied: matplotlib<4,>=3.9 in .\.venv\Lib\site-packages (from -r requirements.txt (line 9)) (3.11.2)
+Requirement already satisfied: numpy>=1.23.2 in .\.venv\Lib\site-packages (from pandas<3,>=2.2->-r requirements.txt (line 1)) (2.4.6)
+Requirement already satisfied: python-dateutil>=2.8.2 in .\.venv\Lib\site-packages (from pandas<3,>=2.2->-r requirements.txt (line 1)) (2.9.0.post0)
+Requirement already satisfied: pytz>=2020.1 in .\.venv\Lib\site-packages (from pandas<3,>=2.2->-r requirements.txt (line 1)) (2026.5)
+Requirement already satisfied: tzdata>=2022.7 in .\.venv\Lib\site-packages (from pandas<3,>=2.2->-r requirements.txt (line 1)) (2026.5)
+Requirement already satisfied: charset_normalizer<4,>=2 in .\.venv\Lib\site-packages (from requests<3,>=2.32->-r requirements.txt (line 2)) (3.5.2)
+Requirement already satisfied: idna<4,>=2.5 in .\.venv\Lib\site-packages (from requests<3,>=2.32->-r requirements.txt (line 2)) (3.20)
+Requirement already satisfied: urllib3<3,>=1.26 in .\.venv\Lib\site-packages (from requests<3,>=2.32->-r requirements.txt (line 2)) (2.8.0)
+Requirement already satisfied: certifi>=2023.5.7 in .\.venv\Lib\site-packages (from requests<3,>=2.32->-r requirements.txt (line 2)) (2026.7.22)
+Requirement already satisfied: typing-extensions>=4.6.0 in .\.venv\Lib\site-packages (from SQLAlchemy<3,>=2.0->-r requirements.txt (line 3)) (4.16.0)
+Requirement already satisfied: colorama>=0.4 in .\.venv\Lib\site-packages (from pytest<9,>=8->-r requirements.txt (line 6)) (0.4.6)
+Requirement already satisfied: iniconfig>=1 in .\.venv\Lib\site-packages (from pytest<9,>=8->-r requirements.txt (line 6)) (2.3.0)
+Requirement already satisfied: packaging>=20 in .\.venv\Lib\site-packages (from pytest<9,>=8->-r requirements.txt (line 6)) (26.3)
+Requirement already satisfied: pluggy<2,>=1.5 in .\.venv\Lib\site-packages (from pytest<9,>=8->-r requirements.txt (line 6)) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in .\.venv\Lib\site-packages (from pytest<9,>=8->-r requirements.txt (line 6)) (2.21.0)
+Requirement already satisfied: starlette>=0.46.0 in .\.venv\Lib\site-packages (from fastapi<1,>=0.115->-r requirements.txt (line 7)) (1.7.0)
+Requirement already satisfied: pydantic>=2.9.0 in .\.venv\Lib\site-packages (from fastapi<1,>=0.115->-r requirements.txt (line 7)) (2.13.5)
+Requirement already satisfied: typing-inspection>=0.4.2 in .\.venv\Lib\site-packages (from fastapi<1,>=0.115->-r requirements.txt (line 7)) (0.4.4)
+Requirement already satisfied: annotated-doc>=0.0.2 in .\.venv\Lib\site-packages (from fastapi<1,>=0.115->-r requirements.txt (line 7)) (0.0.5)
+Requirement already satisfied: opentelemetry-api>=1.44.0 in .\.venv\Lib\site-packages (from fastapi<1,>=0.115->-r requirements.txt (line 7)) (1.45.0)
+Requirement already satisfied: click>=7.0 in .\.venv\Lib\site-packages (from uvicorn<1,>=0.30->uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (8.5.0)
+Requirement already satisfied: h11>=0.8 in .\.venv\Lib\site-packages (from uvicorn<1,>=0.30->uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (0.16.0)
+Requirement already satisfied: contourpy>=1.0.1 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (1.3.3)
+Requirement already satisfied: cycler>=0.10 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (0.12.1)
+Requirement already satisfied: fonttools>=4.28.2 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (4.66.1)
+Requirement already satisfied: kiwisolver>=1.3.1 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (1.5.1)
+Requirement already satisfied: pillow>=9 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (12.3.0)
+Requirement already satisfied: pyparsing>=3 in .\.venv\Lib\site-packages (from matplotlib<4,>=3.9->-r requirements.txt (line 9)) (3.3.3)
+Requirement already satisfied: psycopg-binary==3.3.6 in .\.venv\Lib\site-packages (from psycopg[binary]<4,>=3.2->-r requirements.txt (line 4)) (3.3.6)
+Requirement already satisfied: httptools>=0.8.0 in .\.venv\Lib\site-packages (from uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (0.8.0)
+Requirement already satisfied: pyyaml>=5.1 in .\.venv\Lib\site-packages (from uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (6.0.3)
+Requirement already satisfied: watchfiles>=0.20 in .\.venv\Lib\site-packages (from uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (1.3.0)
+Requirement already satisfied: websockets>=13.0 in .\.venv\Lib\site-packages (from uvicorn[standard]<1,>=0.30->-r requirements.txt (line 8)) (17.2)
+Requirement already satisfied: annotated-types>=0.6.0 in .\.venv\Lib\site-packages (from pydantic>=2.9.0->fastapi<1,>=0.115->-r requirements.txt (line 7)) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.5 in .\.venv\Lib\site-packages (from pydantic>=2.9.0->fastapi<1,>=0.115->-r requirements.txt (line 7)) (2.46.5)
+Requirement already satisfied: six>=1.5 in .\.venv\Lib\site-packages (from python-dateutil>=2.8.2->pandas<3,>=2.2->-r requirements.txt (line 1)) (1.17.0)
+Requirement already satisfied: anyio<5,>=4.0.0 in .\.venv\Lib\site-packages (from starlette>=0.46.0->fastapi<1,>=0.115->-r requirements.txt (line 7)) (4.15.1)
+
+$ python -m pip list
+Package            Version
+------------------ -----------
+annotated-doc      0.0.5
+annotated-types    0.8.0
+anyio              4.15.1
+certifi            2026.7.22
+charset-normalizer 3.5.2
+click              8.5.0
+colorama           0.4.6
+contourpy          1.3.3
+cycler             0.12.1
+fastapi            0.142.2
+fonttools          4.66.1
+h11                0.16.0
+httptools          0.8.0
+idna               3.20
+iniconfig          2.3.0
+kiwisolver         1.5.1
+matplotlib         3.11.2
+numpy              2.4.6
+opentelemetry-api  1.45.0
+packaging          26.3
+pandas             2.3.3
+pillow             12.3.0
+pip                26.2.1
+pluggy             1.6.0
+psycopg            3.3.6
+psycopg-binary     3.3.6
+pydantic           2.13.5
+pydantic_core      2.46.5
+Pygments           2.21.0
+pyparsing          3.3.3
+pytest             8.4.2
+python-dateutil    2.9.0.post0
+python-dotenv      1.2.4
+pytz               2026.5
+PyYAML             6.0.3
+requests           2.34.2
+setuptools         65.5.0
+six                1.17.0
+SQLAlchemy         2.1.3
+starlette          1.7.0
+typing_extensions  4.16.0
+typing-inspection  0.4.4
+tzdata             2026.5
+urllib3            2.8.0
+uvicorn            0.54.0
+watchfiles         1.3.0
+websockets         17.2
+
+$ python -c "import pandas, sqlalchemy, psycopg, dotenv; ..."
+pandas 2.3.3
+sqlalchemy 2.1.3
+psycopg 3.3.6
+python-dotenv 1.2.4
+[OK] all required packages import successfully
