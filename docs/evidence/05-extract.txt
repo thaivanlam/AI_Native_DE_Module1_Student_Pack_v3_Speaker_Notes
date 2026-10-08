@@ -1,0 +1,22 @@
+# 05-extract — Minh chung read_dataset (Task 1.2)
+# Ngay chay: 2026-10-08 12:24:56
+
+== 1. Doc 5 dataset cua batch data/incremental/day_2026-07-01
+[SUCCESS] customers_daily.csv: 100 rows x 10 cols | type=DataFrame
+[SUCCESS] products_daily.csv: 50 rows x 9 cols | type=DataFrame
+[SUCCESS] orders_daily.csv: 600 rows x 10 cols | type=DataFrame
+[SUCCESS] order_items_daily.csv: 1533 rows x 9 cols | type=DataFrame
+[SUCCESS] payments_daily.json: 536 rows x 9 cols | type=DataFrame
+
+== 2. Cac dinh dang/cau truc bo sung (file tam)
+[SUCCESS] bom.csv (UTF-8 BOM): 2 rows | columns=['id', 'name']
+[SUCCESS] wrapped.json ({"data": [...]}): 3 rows | columns=['id']
+
+== 3. Bat loi
+[ERROR] missing.csv -> FileNotFoundError: Missing file: data\incremental\day_2026-07-01\missing.csv
+[ERROR] notes.txt -> ValueError: Unsupported file: <tmp>\notes.txt
+[ERROR] header_only.csv -> ValueError: Empty dataset: <tmp>\header_only.csv
+[ERROR] zero_bytes.csv -> ValueError: Empty dataset: <tmp>\zero_bytes.csv
+[ERROR] empty_list.json -> ValueError: Empty dataset: <tmp>\empty_list.json
+
+exit code: 0
