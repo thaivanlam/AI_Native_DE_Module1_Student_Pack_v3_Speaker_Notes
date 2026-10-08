@@ -1,0 +1,78 @@
+# 05-normalize — Minh chung normalize() (Task 1.4)
+# Ngay chay: 2026-10-08 12:29:44
+
+== 1. Before vs After tren 5 dong mau 'ban' (tu tao, du moi quy tac)
+
+--- BEFORE (repr de thay khoang trang) ---
+columns: ["' Order_ID '", "'Email'", "'STATUS'", "'Channel '", "'payment_method'", "'quantity'", "'order_total'", "'order_date'", "'shipping_city'"]
+   Order_ID                    Email        STATUS      Channel     payment_method quantity    order_total                   order_date shipping_city
+0     'ORD1'  ' User01@Example.COM '   'Completed'         'WEB'        'E_Wallet'      '2'  '19156500.00'  '2026-07-01T18:57:00+07:00'    '  Ha Noi'
+1    ' ORD2'    'USER02@example.com'   ' PENDING '  'Mobile_App'            'CARD'     ' 1'      '7092000'  '2026-07-01T20:47:00+07:00'       'Hue  '
+2    'ORD3 '    'user03@example.com'     'shipped'     ' social'  ' Bank_Transfer'    'abc'          'N/A'                   'bad-date'     'Da Nang'
+3     'ORD4'                    None   'CANCELLED'         'web'            'cash'      '3'   ' 150000.5 '  '2026-07-02T00:30:00+07:00'   ' Can Tho '
+4     'ORD5'  '  User05@EXAMPLE.com'  'Confirmed '         'WEB'            'Card'     None            '0'                         None        'Vinh'
+dtypes: {' Order_ID ': 'object', 'Email': 'object', 'STATUS': 'object', 'Channel ': 'object', 'payment_method': 'object', 'quantity': 'object', 'order_total': 'object', 'order_date': 'object', 'shipping_city': 'object'}
+
+--- AFTER ---
+columns: ["'order_id'", "'email'", "'status'", "'channel'", "'payment_method'", "'quantity'", "'order_total'", "'order_date'", "'shipping_city'"]
+  order_id                 email       status       channel   payment_method quantity order_total                                       order_date shipping_city
+0   'ORD1'  'user01@example.com'  'completed'         'web'       'e_wallet'      2.0  19156500.0  Timestamp('2026-07-01 11:57:00+0000', tz='UTC')      'Ha Noi'
+1   'ORD2'  'user02@example.com'    'pending'  'mobile_app'           'card'      1.0   7092000.0  Timestamp('2026-07-01 13:47:00+0000', tz='UTC')         'Hue'
+2   'ORD3'  'user03@example.com'    'shipped'      'social'  'bank_transfer'      nan         nan                                              NaT     'Da Nang'
+3   'ORD4'                  None  'cancelled'         'web'           'cash'      3.0    150000.5  Timestamp('2026-07-01 17:30:00+0000', tz='UTC')     'Can Tho'
+4   'ORD5'  'user05@example.com'  'confirmed'         'web'           'card'      nan         0.0                                              NaT        'Vinh'
+dtypes: {'order_id': 'object', 'email': 'object', 'status': 'object', 'channel': 'object', 'payment_method': 'object', 'quantity': 'float64', 'order_total': 'float64', 'order_date': 'datetime64[ns, UTC]', 'shipping_city': 'object'}
+
+--- So sanh theo tung quy tac (dong 0..4) ---
+ten cot          BEFORE=[' Order_ID ', 'Email', 'STATUS', 'Channel ', 'payment_method', 'quantity', 'order_total', 'order_date', 'shipping_city']
+                 AFTER =['order_id', 'email', 'status', 'channel', 'payment_method', 'quantity', 'order_total', 'order_date', 'shipping_city']
+string (strip)   BEFORE=['  Ha Noi', 'Hue  ', 'Da Nang', ' Can Tho ', 'Vinh']
+                 AFTER =['Ha Noi', 'Hue', 'Da Nang', 'Can Tho', 'Vinh']
+email            BEFORE=[' User01@Example.COM ', 'USER02@example.com', 'user03@example.com', None, '  User05@EXAMPLE.com']
+                 AFTER =['user01@example.com', 'user02@example.com', 'user03@example.com', None, 'user05@example.com']
+enum status      BEFORE=['Completed', ' PENDING ', 'shipped', 'CANCELLED', 'Confirmed ']
+                 AFTER =['completed', 'pending', 'shipped', 'cancelled', 'confirmed']
+enum channel     BEFORE=['WEB', 'Mobile_App', ' social', 'web', 'WEB']
+                 AFTER =['web', 'mobile_app', 'social', 'web', 'web']
+enum pay_method  BEFORE=['E_Wallet', 'CARD', ' Bank_Transfer', 'cash', 'Card']
+                 AFTER =['e_wallet', 'card', 'bank_transfer', 'cash', 'card']
+numeric qty      BEFORE=['2', ' 1', 'abc', '3', None]
+                 AFTER =[2.0, 1.0, nan, 3.0, nan]
+numeric total    BEFORE=['19156500.00', '7092000', 'N/A', ' 150000.5 ', '0']
+                 AFTER =[19156500.0, 7092000.0, nan, 150000.5, 0.0]
+datetime         BEFORE=['2026-07-01T18:57:00+07:00', '2026-07-01T20:47:00+07:00', 'bad-date', '2026-07-02T00:30:00+07:00', None]
+                 AFTER =['2026-07-01 11:57:00+00:00', '2026-07-01 13:47:00+00:00', NaT, '2026-07-01 17:30:00+00:00', NaT]
+
+--- Kiem tra ---
+[OK] RAW Immutability: DataFrame dau vao khong doi sau normalize()
+[OK] email/enum lowercase; 'abc','N/A' -> NaN; 'bad-date' -> NaT; 18:57+07:00 -> 11:57 UTC
+
+== 2. Chay tren 5 dataset that cua batch data/incremental/day_2026-07-01
+dataset=customers_daily rows_in=100 rows_out=100 raw_unchanged=True new_nulls_from_coerce=0
+  dtype_changes={'created_at': 'object->datetime64[ns, UTC]', 'updated_at': 'object->datetime64[ns, UTC]'}
+dataset=products_daily rows_in=50 rows_out=50 raw_unchanged=True new_nulls_from_coerce=0
+  dtype_changes={'created_at': 'object->datetime64[ns, UTC]', 'updated_at': 'object->datetime64[ns, UTC]'}
+dataset=orders_daily rows_in=600 rows_out=600 raw_unchanged=True new_nulls_from_coerce=0
+  dtype_changes={'order_date': 'object->datetime64[ns, UTC]', 'created_at': 'object->datetime64[ns, UTC]', 'updated_at': 'object->datetime64[ns, UTC]'}
+dataset=order_items_daily rows_in=1533 rows_out=1533 raw_unchanged=True new_nulls_from_coerce=0
+  dtype_changes={'created_at': 'object->datetime64[ns, UTC]', 'updated_at': 'object->datetime64[ns, UTC]'}
+dataset=payments_daily rows_in=536 rows_out=536 raw_unchanged=True new_nulls_from_coerce=0
+  dtype_changes={'payment_date': 'object->datetime64[ns, UTC]', 'amount': 'object->float64', 'created_at': 'object->datetime64[ns, UTC]', 'updated_at': 'object->datetime64[ns, UTC]'}
+
+== 3. 5 dong dau orders_daily: Before vs After
+--- BEFORE ---
+    order_id                 order_date     status     channel  order_total
+0  ORD005001  2026-07-01T18:57:00+07:00  completed  mobile_app   19156500.0
+1  ORD005002  2026-07-01T20:47:00+07:00    pending         web    7092000.0
+2  ORD005003  2026-07-01T14:44:00+07:00  completed      social   14082500.0
+3  ORD005004  2026-07-01T18:51:00+07:00  confirmed      social   21671000.0
+4  ORD005005  2026-07-01T08:59:00+07:00  completed  mobile_app   13172000.0
+--- AFTER ---
+    order_id                order_date     status     channel  order_total
+0  ORD005001 2026-07-01 11:57:00+00:00  completed  mobile_app   19156500.0
+1  ORD005002 2026-07-01 13:47:00+00:00    pending         web    7092000.0
+2  ORD005003 2026-07-01 07:44:00+00:00  completed      social   14082500.0
+3  ORD005004 2026-07-01 11:51:00+00:00  confirmed      social   21671000.0
+4  ORD005005 2026-07-01 01:59:00+00:00  completed  mobile_app   13172000.0
+
+exit code: 0
