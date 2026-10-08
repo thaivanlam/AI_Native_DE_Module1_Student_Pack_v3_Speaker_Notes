@@ -1,0 +1,63 @@
+# 05-logging — Minh chung get_logger() va xu ly ngoai le (Task 1.5)
+# Ngay chay: 2026-10-08 12:31:33
+
+== 1. Output tren CONSOLE (StreamHandler)
+[CHECK] get_logger() goi 2 lan -> cung object: True | handlers=['FileHandler', 'StreamHandler'] | level=20 (INFO=20) | log_file=logs/pipeline.log
+2026-10-08 12:31:33,719 | INFO | pipeline | Pipeline start | batch=day_2026-07-01
+2026-10-08 12:31:33,719 | INFO | extract | Reading dataset=customers_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-08 12:31:33,727 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-08 12:31:33,737 | INFO | pipeline | Normalized dataset=customers_daily rows_in=100 rows_out=100 duplicates=0
+2026-10-08 12:31:33,737 | INFO | extract | Reading dataset=products_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\products_daily.csv
+2026-10-08 12:31:33,737 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-08 12:31:33,750 | INFO | pipeline | Normalized dataset=products_daily rows_in=50 rows_out=50 duplicates=0
+2026-10-08 12:31:33,750 | INFO | extract | Reading dataset=orders_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\orders_daily.csv
+2026-10-08 12:31:33,750 | INFO | extract | Loaded dataset=orders_daily rows=600 cols=10
+2026-10-08 12:31:33,750 | INFO | pipeline | Normalized dataset=orders_daily rows_in=600 rows_out=600 duplicates=0
+2026-10-08 12:31:33,750 | INFO | extract | Reading dataset=order_items_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\order_items_daily.csv
+2026-10-08 12:31:33,768 | INFO | extract | Loaded dataset=order_items_daily rows=1533 cols=9
+2026-10-08 12:31:33,774 | INFO | pipeline | Normalized dataset=order_items_daily rows_in=1533 rows_out=1533 duplicates=0
+2026-10-08 12:31:33,774 | INFO | extract | Reading dataset=payments_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\payments_daily.json
+2026-10-08 12:31:33,776 | INFO | extract | Loaded dataset=payments_daily rows=536 cols=9
+2026-10-08 12:31:33,786 | INFO | pipeline | Normalized dataset=payments_daily rows_in=536 rows_out=536 duplicates=0
+2026-10-08 12:31:33,786 | INFO | extract | Reading dataset=missing path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv
+2026-10-08 12:31:33,786 | ERROR | extract | Failed to read dataset=missing path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv | FileNotFoundError: Missing file: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv
+2026-10-08 12:31:33,786 | WARNING | pipeline | Skip dataset=missing (file khong ton tai), pipeline tiep tuc
+2026-10-08 12:31:33,786 | INFO | extract | Reading dataset=notes path=C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt
+2026-10-08 12:31:33,786 | ERROR | extract | Failed to read dataset=notes path=C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt | ValueError: Unsupported file: C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt
+2026-10-08 12:31:33,786 | WARNING | pipeline | Skip dataset=notes (du lieu/dinh dang khong hop le), pipeline tiep tuc
+2026-10-08 12:31:33,786 | INFO | pipeline | Pipeline end | ok=5 failed=2
+[CHECK] so handler sau khi chay: 2 (khong bi nhan doi)
+
+== 2. Noi dung logs/pipeline.log (FileHandler) cua cung lan chay
+2026-10-08 12:31:33,719 | INFO | pipeline | Pipeline start | batch=day_2026-07-01
+2026-10-08 12:31:33,719 | INFO | extract | Reading dataset=customers_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-08 12:31:33,727 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-08 12:31:33,737 | INFO | pipeline | Normalized dataset=customers_daily rows_in=100 rows_out=100 duplicates=0
+2026-10-08 12:31:33,737 | INFO | extract | Reading dataset=products_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\products_daily.csv
+2026-10-08 12:31:33,737 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-08 12:31:33,750 | INFO | pipeline | Normalized dataset=products_daily rows_in=50 rows_out=50 duplicates=0
+2026-10-08 12:31:33,750 | INFO | extract | Reading dataset=orders_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\orders_daily.csv
+2026-10-08 12:31:33,750 | INFO | extract | Loaded dataset=orders_daily rows=600 cols=10
+2026-10-08 12:31:33,750 | INFO | pipeline | Normalized dataset=orders_daily rows_in=600 rows_out=600 duplicates=0
+2026-10-08 12:31:33,750 | INFO | extract | Reading dataset=order_items_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\order_items_daily.csv
+2026-10-08 12:31:33,768 | INFO | extract | Loaded dataset=order_items_daily rows=1533 cols=9
+2026-10-08 12:31:33,774 | INFO | pipeline | Normalized dataset=order_items_daily rows_in=1533 rows_out=1533 duplicates=0
+2026-10-08 12:31:33,774 | INFO | extract | Reading dataset=payments_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\payments_daily.json
+2026-10-08 12:31:33,776 | INFO | extract | Loaded dataset=payments_daily rows=536 cols=9
+2026-10-08 12:31:33,786 | INFO | pipeline | Normalized dataset=payments_daily rows_in=536 rows_out=536 duplicates=0
+2026-10-08 12:31:33,786 | INFO | extract | Reading dataset=missing path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv
+2026-10-08 12:31:33,786 | ERROR | extract | Failed to read dataset=missing path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv | FileNotFoundError: Missing file: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\missing.csv
+2026-10-08 12:31:33,786 | WARNING | pipeline | Skip dataset=missing (file khong ton tai), pipeline tiep tuc
+2026-10-08 12:31:33,786 | INFO | extract | Reading dataset=notes path=C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt
+2026-10-08 12:31:33,786 | ERROR | extract | Failed to read dataset=notes path=C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt | ValueError: Unsupported file: C:\Users\MSI\AppData\Local\Temp\tmplr6d5gwf\notes.txt
+2026-10-08 12:31:33,786 | WARNING | pipeline | Skip dataset=notes (du lieu/dinh dang khong hop le), pipeline tiep tuc
+2026-10-08 12:31:33,786 | INFO | pipeline | Pipeline end | ok=5 failed=2
+
+== 3. Doi chieu
+so dong log tren console : 23
+so dong log trong file   : 23
+so dong ERROR trong file : 2
+console == file          : True (so sanh tung dong, bo qua ky tu xuong dong CRLF)
+
+$ grep -rnE "except\s*:" src/   (kiem tra khong co bare except)
+(khong co ket qua)

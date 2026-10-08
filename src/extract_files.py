@@ -4,6 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.logger import get_logger
+
+logger = get_logger("extract")
+
 
 def _detect_encoding(path: Path) -> str:
     with path.open("rb") as f:
@@ -27,8 +31,7 @@ def _read_json(path: Path) -> pd.DataFrame:
     return pd.DataFrame(payload)
 
 
-def read_dataset(path: Path) -> pd.DataFrame:
-    path = Path(path)
+def _load(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Missing file: {path}")
 
@@ -42,6 +45,22 @@ def read_dataset(path: Path) -> pd.DataFrame:
 
     if len(df) == 0:
         raise ValueError(f"Empty dataset: {path}")
+    return df
+
+
+def read_dataset(path: Path) -> pd.DataFrame:
+    path = Path(path)
+    dataset = path.stem
+    logger.info("Reading dataset=%s path=%s", dataset, path)
+    try:
+        df = _load(path)
+    except (FileNotFoundError, ValueError) as exc:
+        logger.error(
+            "Failed to read dataset=%s path=%s | %s: %s",
+            dataset, path, type(exc).__name__, exc,
+        )
+        raise
+    logger.info("Loaded dataset=%s rows=%d cols=%d", dataset, len(df), len(df.columns))
     return df
 
 
