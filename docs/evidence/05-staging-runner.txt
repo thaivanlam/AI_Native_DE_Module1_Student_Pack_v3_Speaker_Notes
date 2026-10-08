@@ -1,0 +1,70 @@
+# 05-staging-runner — Minh chung batch runner RAW -> STAGING (Task 2.1)
+# Ngay chay: 2026-10-08 14:36:00
+
+== 1. sha256 file dau vao TRUOC khi chay
+de5056059cd441094a5e99a24e28b1a50fb118f55104d972ef333ef0d4fb7431 *data/incremental/day_2026-07-01/customers_daily.csv
+b01e7564a355e6b95a4f302ba2c84e8b32ad02c717fe5add0bb7f7d0acdfcfde *data/incremental/day_2026-07-01/order_items_daily.csv
+3f8cb61ff41347c6a4a6e1e2762a695cdaf14b1effd6df821cfa13459bc79320 *data/incremental/day_2026-07-01/orders_daily.csv
+ad760ad4e82cb28e06ca47dda05e8e4e68360d39c93cc22dc167d0d76f2b3397 *data/incremental/day_2026-07-01/payments_daily.json
+2b573b0a7e3218d6fd93a179a79e9adf95b02cdd9cbcb73e39233b501b73755b *data/incremental/day_2026-07-01/products_daily.csv
+
+== 2. $ python scripts/run_file_pipeline.py
+2026-10-08 14:36:03,173 | INFO | pipeline | Pipeline start | input_dir=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01 | staging_dir=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\staging
+2026-10-08 14:36:03,189 | INFO | extract | Reading dataset=customers_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-08 14:36:03,192 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-08 14:36:03,194 | INFO | pipeline | Profile dataset=customers rows=100 cols=10 missing_total=0 duplicates=0
+2026-10-08 14:36:03,207 | INFO | pipeline | Staged dataset=customers rows_in=100 rows_out=100 -> data/staging/customers_clean.csv
+2026-10-08 14:36:03,207 | INFO | extract | Reading dataset=products_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\products_daily.csv
+2026-10-08 14:36:03,207 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-08 14:36:03,207 | INFO | pipeline | Profile dataset=products rows=50 cols=9 missing_total=0 duplicates=0
+2026-10-08 14:36:03,214 | INFO | pipeline | Staged dataset=products rows_in=50 rows_out=50 -> data/staging/products_clean.csv
+2026-10-08 14:36:03,214 | INFO | extract | Reading dataset=orders_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\orders_daily.csv
+2026-10-08 14:36:03,214 | INFO | extract | Loaded dataset=orders_daily rows=600 cols=10
+2026-10-08 14:36:03,220 | INFO | pipeline | Profile dataset=orders rows=600 cols=10 missing_total=0 duplicates=0
+2026-10-08 14:36:03,226 | INFO | pipeline | Staged dataset=orders rows_in=600 rows_out=600 -> data/staging/orders_clean.csv
+2026-10-08 14:36:03,226 | INFO | extract | Reading dataset=order_items_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\order_items_daily.csv
+2026-10-08 14:36:03,237 | INFO | extract | Loaded dataset=order_items_daily rows=1533 cols=9
+2026-10-08 14:36:03,237 | INFO | pipeline | Profile dataset=order_items rows=1533 cols=9 missing_total=0 duplicates=0
+2026-10-08 14:36:03,252 | INFO | pipeline | Staged dataset=order_items rows_in=1533 rows_out=1533 -> data/staging/order_items_clean.csv
+2026-10-08 14:36:03,252 | INFO | extract | Reading dataset=payments_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01\payments_daily.json
+2026-10-08 14:36:03,252 | INFO | extract | Loaded dataset=payments_daily rows=536 cols=9
+2026-10-08 14:36:03,252 | INFO | pipeline | Profile dataset=payments rows=536 cols=9 missing_total=0 duplicates=0
+2026-10-08 14:36:03,268 | INFO | pipeline | Staged dataset=payments rows_in=536 rows_out=536 -> data/staging/payments_clean.csv
+2026-10-08 14:36:03,268 | INFO | pipeline | RAW check OK | 5 input files unchanged (sha256)
+2026-10-08 14:36:03,268 | INFO | pipeline | Pipeline end | datasets_ok=5 datasets_failed=0 rows_in=2819 rows_out=2819
+exit code: 0
+
+== 3. Cay thu muc data/staging/
+data/staging/
+|-- customers_clean.csv         14304 bytes     101 lines
+|-- order_items_clean.csv      179990 bytes    1534 lines
+|-- orders_clean.csv            89442 bytes     601 lines
+|-- payments_clean.csv          74885 bytes     537 lines
+|-- products_clean.csv           6376 bytes      51 lines
+
+== 4. Doi chieu row count input vs output (output = so dong file - 1 header)
+customers    rows_in=100   rows_out=100   match=True
+products     rows_in=50    rows_out=50    match=True
+orders       rows_in=600   rows_out=600   match=True
+order_items  rows_in=1533  rows_out=1533  match=True
+payments     rows_in=536   rows_out=536   match=True
+
+== 5. 3 dong dau data/staging/orders_clean.csv
+order_id,customer_id,order_date,status,shipping_city,channel,order_total,source_system,created_at,updated_at
+ORD005001,CUS000834,2026-07-01 11:57:00+00:00,completed,Bac Ninh,mobile_app,19156500.0,ecommerce_api,2026-07-01 11:57:00+00:00,2026-07-01 13:41:00+00:00
+ORD005002,CUS000635,2026-07-01 13:47:00+00:00,pending,Vinh,web,7092000.0,ecommerce_api,2026-07-01 13:47:00+00:00,2026-07-01 14:22:00+00:00
+
+== 6. Bao toan RAW: sha256 file dau vao SAU khi chay
+de5056059cd441094a5e99a24e28b1a50fb118f55104d972ef333ef0d4fb7431 *data/incremental/day_2026-07-01/customers_daily.csv
+b01e7564a355e6b95a4f302ba2c84e8b32ad02c717fe5add0bb7f7d0acdfcfde *data/incremental/day_2026-07-01/order_items_daily.csv
+3f8cb61ff41347c6a4a6e1e2762a695cdaf14b1effd6df821cfa13459bc79320 *data/incremental/day_2026-07-01/orders_daily.csv
+ad760ad4e82cb28e06ca47dda05e8e4e68360d39c93cc22dc167d0d76f2b3397 *data/incremental/day_2026-07-01/payments_daily.json
+2b573b0a7e3218d6fd93a179a79e9adf95b02cdd9cbcb73e39233b501b73755b *data/incremental/day_2026-07-01/products_daily.csv
+[OK] 5/5 file dau vao giu nguyen 100% (sha256 truoc == sau)
+$ git status --short data/incremental
+(khong co thay doi)
+
+== 7. Truong hop loi: $ python scripts/run_file_pipeline.py --input-dir data/incremental/khong_ton_tai
+2026-10-08 14:36:04,915 | INFO | pipeline | Pipeline start | input_dir=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\khong_ton_tai | staging_dir=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\staging
+2026-10-08 14:36:04,915 | ERROR | pipeline | Input directory not found: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\khong_ton_tai
+exit code: 1
