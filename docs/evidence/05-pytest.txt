@@ -1,0 +1,30 @@
+# 05-pytest — Minh chung bo test tu dong (Task 2.2)
+# Ngay chay: 2026-10-08 14:37:27
+
+$ pytest tests/test_extract.py tests/test_transform.py -v
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes
+configfile: pytest.ini
+plugins: anyio-4.15.1
+collecting ... collected 15 items
+
+tests/test_extract.py::test_read_csv_success PASSED                      [  6%]
+tests/test_extract.py::test_read_csv_with_bom PASSED                     [ 13%]
+tests/test_extract.py::test_read_json_nested_data[list] PASSED           [ 20%]
+tests/test_extract.py::test_read_json_nested_data[data_wrapper] PASSED   [ 26%]
+tests/test_extract.py::test_read_file_not_found PASSED                   [ 33%]
+tests/test_extract.py::test_unsupported_file_extension PASSED            [ 40%]
+tests/test_extract.py::test_empty_dataset_rejected[header_only.csv-id,name\n] PASSED [ 46%]
+tests/test_extract.py::test_empty_dataset_rejected[zero_bytes.csv-] PASSED [ 53%]
+tests/test_extract.py::test_empty_dataset_rejected[empty_list.json-[]] PASSED [ 60%]
+tests/test_extract.py::test_profile_metrics PASSED                       [ 66%]
+tests/test_transform.py::test_normalize_raw_immutability PASSED          [ 73%]
+tests/test_transform.py::test_normalize_column_names PASSED              [ 80%]
+tests/test_transform.py::test_normalize_strings_and_enums PASSED         [ 86%]
+tests/test_transform.py::test_normalize_keeps_non_string_values_in_object_columns PASSED [ 93%]
+tests/test_transform.py::test_normalize_numeric_and_datetime PASSED      [100%]
+
+============================= 15 passed in 0.51s ==============================
+exit code: 0
