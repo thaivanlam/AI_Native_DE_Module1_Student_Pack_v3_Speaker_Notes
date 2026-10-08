@@ -43,3 +43,12 @@ def read_dataset(path: Path) -> pd.DataFrame:
     if len(df) == 0:
         raise ValueError(f"Empty dataset: {path}")
     return df
+
+
+def profile(df: pd.DataFrame) -> dict:
+    return {
+        "rows": len(df),
+        "columns": list(df.columns),
+        "missing": {col: int(n) for col, n in df.isna().sum().items()},
+        "duplicates": int(df.duplicated().sum()),
+    }
