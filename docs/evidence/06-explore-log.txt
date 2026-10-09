@@ -1,0 +1,112 @@
+# 06-explore-log — Minh chung kham pha Mock REST API (Bai 1)
+# Ngay chay: 2026-10-09 18:45:07
+# Base URL: http://localhost:8000
+# MOCK_API_KEY=****** (len=12, nguon: bien moi truong / .env)
+
+== 1. Health check
+GET /health  [(khong gui X-API-Key)]
+   -> 200 OK | {"status":"ok"}
+   [OK] status 200 va body {'status': 'ok'}
+
+== 2. Authentication (header X-API-Key)
+GET /orders?page=1&page_size=1  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=1 total=600 has_next=true len(data)=1
+   [OK] key dung -> 200
+GET /orders?page=1&page_size=1  [X-API-Key: ****** (key sai)]
+   -> 401 Unauthorized | {"detail":"Invalid API key"}
+   [OK] key sai -> 401 Invalid API key
+GET /orders?page=1&page_size=1  [(khong gui X-API-Key)]
+   -> 401 Unauthorized | {"detail":"Invalid API key"}
+   [OK] thieu header -> 401 Invalid API key
+GET /orders?page=1&page_size=1&api_key=******  [(khong gui X-API-Key)]
+   -> 401 Unauthorized | {"detail":"Invalid API key"}
+   [OK] key truyen qua query string khong duoc chap nhan -> 401
+
+== 3. Pagination (page >= 1, page_size 1..500, mac dinh 100)
+GET /orders?page=1&page_size=10  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=10 total=600 has_next=true len(data)=10
+   [OK] metadata gom dung 5 khoa: page, page_size, total, has_next, data
+   [OK] page 1: 10 dong, has_next=true
+GET /orders  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=600 has_next=true len(data)=100
+   [OK] khong truyen tham so -> page=1, page_size=100
+GET /orders?page=6&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=6 page_size=100 total=600 has_next=false len(data)=100
+   [OK] trang cuoi (6) -> has_next=false
+GET /orders?page=7&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=7 page_size=100 total=600 has_next=false len(data)=0
+   [OK] vuot trang cuoi -> 200, data=[], has_next=false
+GET /orders?page=1&page_size=500  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=500 total=600 has_next=true len(data)=500
+   [OK] page_size=500 (toi da) -> 200
+GET /orders?page=0  [X-API-Key: ****** (key dung)]
+   -> 422 Unprocessable Entity | loc=['query', 'page'] msg=Input should be greater than or equal to 1
+   [OK] {'page': 0} ngoai mien gia tri -> 422
+GET /orders?page_size=0  [X-API-Key: ****** (key dung)]
+   -> 422 Unprocessable Entity | loc=['query', 'page_size'] msg=Input should be greater than or equal to 1
+   [OK] {'page_size': 0} ngoai mien gia tri -> 422
+GET /orders?page_size=501  [X-API-Key: ****** (key dung)]
+   -> 422 Unprocessable Entity | loc=['query', 'page_size'] msg=Input should be less than or equal to 500
+   [OK] {'page_size': 501} ngoai mien gia tri -> 422
+GET /orders?page=abc  [X-API-Key: ****** (key dung)]
+   -> 422 Unprocessable Entity | loc=['query', 'page'] msg=Input should be a valid integer, unable to parse string as an integer
+   [OK] {'page': 'abc'} ngoai mien gia tri -> 422
+
+== 4. Filtering (updated_after, ISO 8601)
+GET /orders?updated_after=2026-07-01T12%3A00%3A00Z&page_size=10  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=10 total=234 has_next=true len(data)=10
+   [OK] total khop voi so dong updated_at > cutoff tinh lai tu full load (234/600)
+GET /orders?updated_after=2026-07-02T01%3A44%3A00%2B07%3A00  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=0 has_next=false len(data)=0
+   [OK] cutoff = max(updated_at) -> total=0 (so sanh > nghiem ngat, khong phai >=)
+GET /orders?updated_after=2026-07-01T19%3A00%3A00%2B07%3A00&page_size=10  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=10 total=234 has_next=true len(data)=10
+   [OK] offset +07:00 (da URL-encode %2B) cho cung ket qua voi 12:00:00Z
+GET /orders?updated_after=not-a-date  [X-API-Key: ****** (key dung)]
+   -> 400 Bad Request | {"detail":"updated_after must be ISO 8601"}
+   [OK] sai dinh dang -> 400 updated_after must be ISO 8601
+GET /orders?updated_after=2026-07-01T19:00:00+07:00  [X-API-Key: ******]
+   -> 400 Bad Request | {"detail":"updated_after must be ISO 8601"}
+   [OK] dau '+' khong URL-encode bi doc thanh khoang trang -> 400
+GET /orders?updated_after=2026-07-01T12%3A00%3A00  [X-API-Key: ****** (key dung)]
+   -> 500 Internal Server Error | Internal Server Error
+   [OK] '2026-07-01T12:00:00' khong co mui gio -> 500 (loi phia server)
+GET /orders?updated_after=2026-07-01  [X-API-Key: ****** (key dung)]
+   -> 500 Internal Server Error | Internal Server Error
+   [OK] '2026-07-01' khong co mui gio -> 500 (loi phia server)
+
+== 5. Khao sat 5 endpoints nghiep vu
+GET /customers?page=1&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=100 has_next=false len(data)=100
+   fields(10): customer_id, full_name, email, phone, city, customer_segment, status, source_system, created_at, updated_at
+   updated_at: 2026-07-01T08:01:00+07:00 .. 2026-07-01T09:59:00+07:00 | so trang voi page_size=100: 1
+   [OK] /customers: full load 100 dong = total, customer_id duy nhat
+GET /products?page=1&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=50 has_next=false len(data)=50
+   fields(9): product_id, category_id, product_name, unit_price, cost_price, status, source_system, created_at, updated_at
+   updated_at: 2026-07-01T08:01:00+07:00 .. 2026-07-01T10:40:00+07:00 | so trang voi page_size=100: 1
+   [OK] /products: full load 50 dong = total, product_id duy nhat
+GET /orders?page=1&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=600 has_next=true len(data)=100
+   fields(10): order_id, customer_id, order_date, status, shipping_city, channel, order_total, source_system, created_at, updated_at
+   updated_at: 2026-07-01T08:12:00+07:00 .. 2026-07-02T01:44:00+07:00 | so trang voi page_size=100: 6
+   [OK] /orders: full load 600 dong = total, order_id duy nhat
+GET /order-items?page=1&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=1533 has_next=true len(data)=100
+   fields(9): order_item_id, order_id, product_id, quantity, unit_price, discount_amount, source_system, created_at, updated_at
+   updated_at: 2026-07-01T08:01:00+07:00 .. 2026-07-01T22:59:00+07:00 | so trang voi page_size=100: 16
+   [OK] /order-items: full load 1533 dong = total, order_item_id duy nhat
+GET /payments?page=1&page_size=100  [X-API-Key: ****** (key dung)]
+   -> 200 OK | page=1 page_size=100 total=536 has_next=true len(data)=100
+   fields(9): payment_id, order_id, payment_date, payment_method, payment_status, amount, source_system, created_at, updated_at
+   updated_at: 2026-07-01T08:47:00+07:00 .. 2026-07-02T03:22:00+07:00 | so trang voi page_size=100: 6
+   [OK] /payments: full load 536 dong = total, payment_id duy nhat
+GET /order_items  [X-API-Key: ****** (key dung)]
+   -> 404 Not Found | {"detail":"Not Found"}
+   [OK] /order_items (gach duoi) khong ton tai -> 404
+
+== Tong ket
+GET /health -> 200 ok | sai key -> 401 Invalid API key | /orders?page=1&page_size=10 -> 10 rows has_next=true total=600
+checks failed: 0
+
+exit code: 0
