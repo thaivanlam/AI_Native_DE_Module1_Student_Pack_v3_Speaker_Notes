@@ -1,0 +1,133 @@
+# 06-idempotency-log — Minh chung kiem thu idempotency (Bai 5)
+# Ngay chay: 2026-10-11 11:14:37
+# Run 1 (da nap truoc do): data/raw/20261011T040548Z/ | Dich: postgresql+psycopg://de_user:***@localhost:5432/ecommerce
+
+== 1. Trang thai sau Run 1, truoc Run 2
+SELECT COUNT(*), COUNT(DISTINCT pk), md5(noi dung) FROM core.<bang>:
+   core.customers    COUNT(*)=1050   COUNT(DISTINCT customer_id)=1050   md5=c9a96347e736...
+   core.products     COUNT(*)=520    COUNT(DISTINCT product_id)=520    md5=f0c8f4cbf5d5...
+   core.orders       COUNT(*)=5600   COUNT(DISTINCT order_id)=5600   md5=3d6df900bbdf...
+   core.order_items  COUNT(*)=14250  COUNT(DISTINCT order_item_id)=14250  md5=956bf53e4a3f...
+   core.payments     COUNT(*)=5053   COUNT(DISTINCT payment_id)=5053   md5=3b67f86b3330...
+
+== 2. Run 2: chay lai toan bo pipeline (API -> RAW moi -> upsert core)
+extract_api_to_raw + load_raw_to_core  # tuong duong CLI: python -m src.pipeline --run-id 20261011T041437Z --load
+2026-10-11 11:14:37,185 | INFO | pipeline | API extract start | run_id=20261011T041437Z resources=customers,products,orders,order_items,payments updated_after=None page_size=100
+2026-10-11 11:14:37,218 | INFO | api_client | Fetched resource=customers page=1 rows=100 total_so_far=100
+2026-10-11 11:14:37,223 | INFO | pipeline | RAW saved resource=customers rows=100 -> data/raw/20261011T041437Z/customers.json
+2026-10-11 11:14:37,265 | INFO | api_client | Fetched resource=products page=1 rows=50 total_so_far=50
+2026-10-11 11:14:37,273 | INFO | pipeline | RAW saved resource=products rows=50 -> data/raw/20261011T041437Z/products.json
+2026-10-11 11:14:37,346 | INFO | api_client | Fetched resource=orders page=1 rows=100 total_so_far=100
+2026-10-11 11:14:37,391 | INFO | api_client | Fetched resource=orders page=2 rows=100 total_so_far=200
+2026-10-11 11:14:37,430 | INFO | api_client | Fetched resource=orders page=3 rows=100 total_so_far=300
+2026-10-11 11:14:37,467 | INFO | api_client | Fetched resource=orders page=4 rows=100 total_so_far=400
+2026-10-11 11:14:37,494 | INFO | api_client | Fetched resource=orders page=5 rows=100 total_so_far=500
+2026-10-11 11:14:37,531 | INFO | api_client | Fetched resource=orders page=6 rows=100 total_so_far=600
+2026-10-11 11:14:37,545 | INFO | pipeline | RAW saved resource=orders rows=600 -> data/raw/20261011T041437Z/orders.json
+2026-10-11 11:14:37,595 | INFO | api_client | Fetched resource=order_items page=1 rows=100 total_so_far=100
+2026-10-11 11:14:37,689 | INFO | api_client | Fetched resource=order_items page=2 rows=100 total_so_far=200
+2026-10-11 11:14:37,763 | INFO | api_client | Fetched resource=order_items page=3 rows=100 total_so_far=300
+2026-10-11 11:14:37,849 | INFO | api_client | Fetched resource=order_items page=4 rows=100 total_so_far=400
+2026-10-11 11:14:37,887 | INFO | api_client | Fetched resource=order_items page=5 rows=100 total_so_far=500
+2026-10-11 11:14:37,926 | INFO | api_client | Fetched resource=order_items page=6 rows=100 total_so_far=600
+2026-10-11 11:14:37,948 | INFO | api_client | Fetched resource=order_items page=7 rows=100 total_so_far=700
+2026-10-11 11:14:37,986 | INFO | api_client | Fetched resource=order_items page=8 rows=100 total_so_far=800
+2026-10-11 11:14:38,017 | INFO | api_client | Fetched resource=order_items page=9 rows=100 total_so_far=900
+2026-10-11 11:14:38,065 | INFO | api_client | Fetched resource=order_items page=10 rows=100 total_so_far=1000
+2026-10-11 11:14:38,118 | INFO | api_client | Fetched resource=order_items page=11 rows=100 total_so_far=1100
+2026-10-11 11:14:38,215 | INFO | api_client | Fetched resource=order_items page=12 rows=100 total_so_far=1200
+2026-10-11 11:14:38,243 | INFO | api_client | Fetched resource=order_items page=13 rows=100 total_so_far=1300
+2026-10-11 11:14:38,294 | INFO | api_client | Fetched resource=order_items page=14 rows=100 total_so_far=1400
+2026-10-11 11:14:38,352 | INFO | api_client | Fetched resource=order_items page=15 rows=100 total_so_far=1500
+2026-10-11 11:14:38,452 | INFO | api_client | Fetched resource=order_items page=16 rows=33 total_so_far=1533
+2026-10-11 11:14:38,593 | INFO | pipeline | RAW saved resource=order_items rows=1533 -> data/raw/20261011T041437Z/order_items.json
+2026-10-11 11:14:38,634 | INFO | api_client | Fetched resource=payments page=1 rows=100 total_so_far=100
+2026-10-11 11:14:38,674 | INFO | api_client | Fetched resource=payments page=2 rows=100 total_so_far=200
+2026-10-11 11:14:38,792 | INFO | api_client | Fetched resource=payments page=3 rows=100 total_so_far=300
+2026-10-11 11:14:38,822 | INFO | api_client | Fetched resource=payments page=4 rows=100 total_so_far=400
+2026-10-11 11:14:38,840 | INFO | api_client | Fetched resource=payments page=5 rows=100 total_so_far=500
+2026-10-11 11:14:38,866 | INFO | api_client | Fetched resource=payments page=6 rows=36 total_so_far=536
+2026-10-11 11:14:38,874 | INFO | pipeline | RAW saved resource=payments rows=536 -> data/raw/20261011T041437Z/payments.json
+2026-10-11 11:14:38,874 | INFO | pipeline | API extract end | run_id=20261011T041437Z files=5
+[OK] du lieu API cua Run 2 giong het Run 1 (so sanh data cua 5 file RAW)
+2026-10-11 11:14:38,894 | INFO | pipeline | CORE load start | run_id=20261011T041437Z resources=customers,products,orders,order_items,payments
+2026-10-11 11:14:38,894 | INFO | extract | Reading dataset=customers path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\customers.json
+2026-10-11 11:14:38,896 | INFO | extract | Loaded dataset=customers rows=100 cols=10
+2026-10-11 11:14:38,974 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-11 11:14:38,975 | INFO | extract | Reading dataset=products path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\products.json
+2026-10-11 11:14:38,977 | INFO | extract | Loaded dataset=products rows=50 cols=9
+2026-10-11 11:14:39,042 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-11 11:14:39,047 | INFO | extract | Reading dataset=orders path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\orders.json
+2026-10-11 11:14:39,050 | INFO | extract | Loaded dataset=orders rows=600 cols=10
+2026-10-11 11:14:39,104 | INFO | load | [UPSERT] table=core.orders incoming=600 inserted=0 updated=600
+2026-10-11 11:14:39,109 | INFO | extract | Reading dataset=order_items path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\order_items.json
+2026-10-11 11:14:39,113 | INFO | extract | Loaded dataset=order_items rows=1533 cols=9
+2026-10-11 11:14:39,246 | INFO | load | [UPSERT] table=core.order_items incoming=1533 inserted=0 updated=1533
+2026-10-11 11:14:39,252 | INFO | extract | Reading dataset=payments path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\payments.json
+2026-10-11 11:14:39,254 | INFO | extract | Loaded dataset=payments rows=536 cols=9
+2026-10-11 11:14:39,298 | INFO | load | [UPSERT] table=core.payments incoming=536 inserted=0 updated=536
+2026-10-11 11:14:39,306 | INFO | pipeline | CORE load end | run_id=20261011T041437Z inserted=0 updated=2819
+Sau Run 2:
+   core.customers    COUNT(*)=1050   COUNT(DISTINCT customer_id)=1050   md5=c9a96347e736...
+   core.products     COUNT(*)=520    COUNT(DISTINCT product_id)=520    md5=f0c8f4cbf5d5...
+   core.orders       COUNT(*)=5600   COUNT(DISTINCT order_id)=5600   md5=3d6df900bbdf...
+   core.order_items  COUNT(*)=14250  COUNT(DISTINCT order_item_id)=14250  md5=956bf53e4a3f...
+   core.payments     COUNT(*)=5053   COUNT(DISTINCT payment_id)=5053   md5=3b67f86b3330...
+Run 2 core.customers: incoming=100 inserted=0 updated=100
+[OK] core.customers: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 2 core.products: incoming=50 inserted=0 updated=50
+[OK] core.products: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 2 core.orders: incoming=600 inserted=0 updated=600
+[OK] core.orders: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 2 core.order_items: incoming=1533 inserted=0 updated=1533
+[OK] core.order_items: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 2 core.payments: incoming=536 inserted=0 updated=536
+[OK] core.payments: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+[OK] noi dung 5 bang giong het truoc khi chay (md5 toan bang khong doi)
+
+== 3. Run 3: nap lai chinh RAW cua Run 2 them mot lan nua
+load_raw_to_core('20261011T041437Z')
+2026-10-11 11:14:39,349 | INFO | pipeline | CORE load start | run_id=20261011T041437Z resources=customers,products,orders,order_items,payments
+2026-10-11 11:14:39,349 | INFO | extract | Reading dataset=customers path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\customers.json
+2026-10-11 11:14:39,350 | INFO | extract | Loaded dataset=customers rows=100 cols=10
+2026-10-11 11:14:39,410 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-11 11:14:39,414 | INFO | extract | Reading dataset=products path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\products.json
+2026-10-11 11:14:39,415 | INFO | extract | Loaded dataset=products rows=50 cols=9
+2026-10-11 11:14:39,465 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-11 11:14:39,467 | INFO | extract | Reading dataset=orders path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\orders.json
+2026-10-11 11:14:39,470 | INFO | extract | Loaded dataset=orders rows=600 cols=10
+2026-10-11 11:14:39,547 | INFO | load | [UPSERT] table=core.orders incoming=600 inserted=0 updated=600
+2026-10-11 11:14:39,563 | INFO | extract | Reading dataset=order_items path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\order_items.json
+2026-10-11 11:14:39,580 | INFO | extract | Loaded dataset=order_items rows=1533 cols=9
+2026-10-11 11:14:39,780 | INFO | load | [UPSERT] table=core.order_items incoming=1533 inserted=0 updated=1533
+2026-10-11 11:14:39,785 | INFO | extract | Reading dataset=payments path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T041437Z\payments.json
+2026-10-11 11:14:39,788 | INFO | extract | Loaded dataset=payments rows=536 cols=9
+2026-10-11 11:14:39,835 | INFO | load | [UPSERT] table=core.payments incoming=536 inserted=0 updated=536
+2026-10-11 11:14:39,838 | INFO | pipeline | CORE load end | run_id=20261011T041437Z inserted=0 updated=2819
+Sau Run 3:
+   core.customers    COUNT(*)=1050   COUNT(DISTINCT customer_id)=1050   md5=c9a96347e736...
+   core.products     COUNT(*)=520    COUNT(DISTINCT product_id)=520    md5=f0c8f4cbf5d5...
+   core.orders       COUNT(*)=5600   COUNT(DISTINCT order_id)=5600   md5=3d6df900bbdf...
+   core.order_items  COUNT(*)=14250  COUNT(DISTINCT order_item_id)=14250  md5=956bf53e4a3f...
+   core.payments     COUNT(*)=5053   COUNT(DISTINCT payment_id)=5053   md5=3b67f86b3330...
+Run 3 core.customers: incoming=100 inserted=0 updated=100
+[OK] core.customers: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 3 core.products: incoming=50 inserted=0 updated=50
+[OK] core.products: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 3 core.orders: incoming=600 inserted=0 updated=600
+[OK] core.orders: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 3 core.order_items: incoming=1533 inserted=0 updated=1533
+[OK] core.order_items: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+Run 3 core.payments: incoming=536 inserted=0 updated=536
+[OK] core.payments: inserted=0, updated=incoming, COUNT(*) khong doi, COUNT(*)=COUNT(DISTINCT pk)
+[OK] noi dung 5 bang giong het truoc khi chay (md5 toan bang khong doi)
+
+== 4. SQL doi soat tren core.orders
+SELECT COUNT(*) FROM core.orders;                 -> 5600
+SELECT COUNT(DISTINCT order_id) FROM core.orders; -> 5600
+So order_id xuat hien nhieu hon 1 lan             -> 0
+[OK] COUNT(*) = COUNT(DISTINCT order_id), khong co khoa trung
+
+checks failed: 0
+
+exit code: 0
