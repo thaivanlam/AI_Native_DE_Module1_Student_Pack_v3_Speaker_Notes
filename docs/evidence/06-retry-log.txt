@@ -1,0 +1,35 @@
+# 06-retry-log — Minh chung bounded retry + exponential backoff (Bai 2)
+# Ngay chay: 2026-10-09 18:53:53
+# Base URL: http://localhost:8000 | X-API-Key: ****** | timeout=10 max_retries=3 backoff_seconds=1
+
+== 1. Mock API dang chay -> goi thanh cong, khong retry
+[OK] mock API healthy truoc khi demo
+fetch_page('orders', page=1, page_size=10) -> rows=10 total=600 has_next=true | 0.3s
+[OK] lay duoc 10 dong ngay lan goi dau
+
+== 2. Dung mock API -> 3 lan thu, cho 1s, 2s, 4s -> RuntimeError
+$ docker compose stop mock-api
+2026-10-09 18:53:54,862 | WARNING | api_client | API call failed attempt 1/3 resource=orders page=1 | ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')) | backoff=1s
+2026-10-09 18:53:59,928 | WARNING | api_client | API call failed attempt 2/3 resource=orders page=1 | ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=10 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")) | backoff=2s
+2026-10-09 18:54:06,030 | WARNING | api_client | API call failed attempt 3/3 resource=orders page=1 | ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=10 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")) | backoff=4s
+-> RuntimeError: API failed after 3 attempts: orders page 1
+-> nguyen nhan goc (__cause__): ConnectionError
+-> tong thoi gian: 15.2s (backoff 1 + 2 + 4 = 7s, cong thoi gian ket noi that bai)
+[OK] nem RuntimeError dung thong diep sau 3 lan thu
+[OK] giu exception goc qua 'from exc'
+[OK] tong thoi gian cho >= 7s
+
+== 3. Bat lai mock API -> goi thanh cong
+$ docker compose start mock-api
+[OK] mock API healthy sau khi bat lai
+fetch_all_pages('orders') -> rows=600 | 1.1s
+[OK] lay du 600 orders sau khi API hoat dong lai
+
+== 4. Key sai (401) -> bao loi ngay, khong retry
+2026-10-09 18:54:14,019 | ERROR | api_client | API request rejected resource=orders page=1 | HTTPError: 401 Client Error: Unauthorized for url: http://localhost:8000/orders?page=1&page_size=10
+-> RuntimeError: API rejected request with status 401: orders page 1 | 0.0s
+[OK] 401 khong bi retry (ket thuc duoi 1s)
+
+checks failed: 0
+
+exit code: 0
