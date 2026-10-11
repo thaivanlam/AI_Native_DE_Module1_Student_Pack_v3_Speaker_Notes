@@ -24,8 +24,14 @@ class FakeResponse:
         return self._payload
 
 
-def page_payload(rows, has_next=False, page=1):
-    return {"page": page, "page_size": 100, "total": len(rows), "has_next": has_next, "data": rows}
+def page_payload(rows, has_next=False, page=1, total=None):
+    return {
+        "page": page,
+        "page_size": 100,
+        "total": len(rows) if total is None else total,
+        "has_next": has_next,
+        "data": rows,
+    }
 
 
 @pytest.fixture
@@ -170,12 +176,54 @@ def test_api_key_never_logged_or_raised(api, log_records):
 
 def test_fetch_all_pages_stops_when_has_next_false(api):
     api.outcomes = [
-        FakeResponse(payload=page_payload([{"id": 1}, {"id": 2}], has_next=True)),
-        FakeResponse(payload=page_payload([{"id": 3}], has_next=False, page=2)),
+        FakeResponse(payload=page_payload([{"id": 1}, {"id": 2}], has_next=True, total=3)),
+        FakeResponse(payload=page_payload([{"id": 3}], has_next=False, page=2, total=3)),
     ]
 
     rows = fetch_all_pages("orders", updated_after="2026-07-01T12:00:00Z")
 
     assert rows == [{"id": 1}, {"id": 2}, {"id": 3}]
     assert [c["params"]["page"] for c in api.calls] == [1, 2]
+    assert all(c["params"]["page_size"] == 100 for c in api.calls)
     assert all(c["params"]["updated_after"] == "2026-07-01T12:00:00Z" for c in api.calls)
+
+
+def test_fetch_all_pages_omits_updated_after_when_not_given(api):
+    api.outcomes = [FakeResponse(payload=page_payload([{"id": 1}]))]
+
+    fetch_all_pages("orders")
+
+    assert "updated_after" not in api.calls[0]["params"]
+
+
+def test_fetch_all_pages_returns_empty_list_for_empty_result(api):
+    api.outcomes = [FakeResponse(payload=page_payload([]))]
+
+    assert fetch_all_pages("orders", updated_after="2099-01-01T00:00:00Z") == []
+    assert len(api.calls) == 1
+
+
+def test_fetch_all_pages_logs_progress_per_page(api, log_records):
+    api.outcomes = [
+        FakeResponse(payload=page_payload([{"id": 1}, {"id": 2}], has_next=True, total=3)),
+        FakeResponse(payload=page_payload([{"id": 3}], has_next=False, page=2, total=3)),
+    ]
+
+    fetch_all_pages("orders")
+
+    messages = [r.getMessage() for r in log_records if r.levelno == logging.INFO]
+    assert messages == [
+        "Fetched resource=orders page=1 rows=2 total_so_far=2",
+        "Fetched resource=orders page=2 rows=1 total_so_far=3",
+    ]
+    assert not [r for r in log_records if r.levelno >= logging.WARNING]
+
+
+def test_fetch_all_pages_warns_when_rows_differ_from_api_total(api, log_records):
+    api.outcomes = [FakeResponse(payload=page_payload([{"id": 1}], total=5))]
+
+    rows = fetch_all_pages("orders")
+
+    assert len(rows) == 1
+    warnings = [r.getMessage() for r in log_records if r.levelno == logging.WARNING]
+    assert warnings == ["Row count mismatch resource=orders fetched=1 api_total=5"]

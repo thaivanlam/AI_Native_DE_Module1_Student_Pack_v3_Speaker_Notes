@@ -80,7 +80,20 @@ def fetch_all_pages(
         payload = fetch_page(
             resource, page, page_size, updated_after, timeout, max_retries, backoff_seconds
         )
-        rows.extend(payload.get("data", []))
+        page_rows = payload.get("data", [])
+        rows.extend(page_rows)
+        log.info(
+            "Fetched resource=%s page=%d rows=%d total_so_far=%d",
+            resource, page, len(page_rows), len(rows),
+        )
         if not payload.get("has_next"):
-            return rows
+            break
         page += 1
+
+    total = payload.get("total")
+    if total is not None and total != len(rows):
+        log.warning(
+            "Row count mismatch resource=%s fetched=%d api_total=%d",
+            resource, len(rows), total,
+        )
+    return rows

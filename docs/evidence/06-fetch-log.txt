@@ -1,0 +1,79 @@
+# 06-fetch-log — Minh chung phan trang + luu RAW (Bai 3)
+# Ngay chay: 2026-10-11 11:05:48
+# Base URL: http://localhost:8000 | X-API-Key: ****** | page_size=100 | run_id=20261011T040548Z
+
+== 1. Full load 5 resource: API -> data/raw/<run_id>/<resource>.json
+extract_api_to_raw(run_id='20261011T040548Z')  # tuong duong CLI: python -m src.pipeline --run-id 20261011T040548Z
+2026-10-11 11:05:48,170 | INFO | pipeline | API extract start | run_id=20261011T040548Z resources=customers,products,orders,order_items,payments updated_after=None page_size=100
+2026-10-11 11:05:48,264 | INFO | api_client | Fetched resource=customers page=1 rows=100 total_so_far=100
+2026-10-11 11:05:48,272 | INFO | pipeline | RAW saved resource=customers rows=100 -> data/raw/20261011T040548Z/customers.json
+2026-10-11 11:05:48,311 | INFO | api_client | Fetched resource=products page=1 rows=50 total_so_far=50
+2026-10-11 11:05:48,323 | INFO | pipeline | RAW saved resource=products rows=50 -> data/raw/20261011T040548Z/products.json
+2026-10-11 11:05:48,405 | INFO | api_client | Fetched resource=orders page=1 rows=100 total_so_far=100
+2026-10-11 11:05:48,492 | INFO | api_client | Fetched resource=orders page=2 rows=100 total_so_far=200
+2026-10-11 11:05:48,579 | INFO | api_client | Fetched resource=orders page=3 rows=100 total_so_far=300
+2026-10-11 11:05:48,668 | INFO | api_client | Fetched resource=orders page=4 rows=100 total_so_far=400
+2026-10-11 11:05:48,718 | INFO | api_client | Fetched resource=orders page=5 rows=100 total_so_far=500
+2026-10-11 11:05:48,792 | INFO | api_client | Fetched resource=orders page=6 rows=100 total_so_far=600
+2026-10-11 11:05:48,840 | INFO | pipeline | RAW saved resource=orders rows=600 -> data/raw/20261011T040548Z/orders.json
+2026-10-11 11:05:48,894 | INFO | api_client | Fetched resource=order_items page=1 rows=100 total_so_far=100
+2026-10-11 11:05:48,934 | INFO | api_client | Fetched resource=order_items page=2 rows=100 total_so_far=200
+2026-10-11 11:05:48,999 | INFO | api_client | Fetched resource=order_items page=3 rows=100 total_so_far=300
+2026-10-11 11:05:49,060 | INFO | api_client | Fetched resource=order_items page=4 rows=100 total_so_far=400
+2026-10-11 11:05:49,107 | INFO | api_client | Fetched resource=order_items page=5 rows=100 total_so_far=500
+2026-10-11 11:05:49,140 | INFO | api_client | Fetched resource=order_items page=6 rows=100 total_so_far=600
+2026-10-11 11:05:49,157 | INFO | api_client | Fetched resource=order_items page=7 rows=100 total_so_far=700
+2026-10-11 11:05:49,181 | INFO | api_client | Fetched resource=order_items page=8 rows=100 total_so_far=800
+2026-10-11 11:05:49,199 | INFO | api_client | Fetched resource=order_items page=9 rows=100 total_so_far=900
+2026-10-11 11:05:49,271 | INFO | api_client | Fetched resource=order_items page=10 rows=100 total_so_far=1000
+2026-10-11 11:05:49,312 | INFO | api_client | Fetched resource=order_items page=11 rows=100 total_so_far=1100
+2026-10-11 11:05:49,335 | INFO | api_client | Fetched resource=order_items page=12 rows=100 total_so_far=1200
+2026-10-11 11:05:49,382 | INFO | api_client | Fetched resource=order_items page=13 rows=100 total_so_far=1300
+2026-10-11 11:05:49,429 | INFO | api_client | Fetched resource=order_items page=14 rows=100 total_so_far=1400
+2026-10-11 11:05:49,452 | INFO | api_client | Fetched resource=order_items page=15 rows=100 total_so_far=1500
+2026-10-11 11:05:49,485 | INFO | api_client | Fetched resource=order_items page=16 rows=33 total_so_far=1533
+2026-10-11 11:05:49,501 | INFO | pipeline | RAW saved resource=order_items rows=1533 -> data/raw/20261011T040548Z/order_items.json
+2026-10-11 11:05:49,533 | INFO | api_client | Fetched resource=payments page=1 rows=100 total_so_far=100
+2026-10-11 11:05:49,566 | INFO | api_client | Fetched resource=payments page=2 rows=100 total_so_far=200
+2026-10-11 11:05:49,587 | INFO | api_client | Fetched resource=payments page=3 rows=100 total_so_far=300
+2026-10-11 11:05:49,675 | INFO | api_client | Fetched resource=payments page=4 rows=100 total_so_far=400
+2026-10-11 11:05:49,717 | INFO | api_client | Fetched resource=payments page=5 rows=100 total_so_far=500
+2026-10-11 11:05:49,734 | INFO | api_client | Fetched resource=payments page=6 rows=36 total_so_far=536
+2026-10-11 11:05:49,749 | INFO | pipeline | RAW saved resource=payments rows=536 -> data/raw/20261011T040548Z/payments.json
+2026-10-11 11:05:49,749 | INFO | pipeline | API extract end | run_id=20261011T040548Z files=5
+
+== 2. Doi soat file RAW voi API
+data/raw/20261011T040548Z/customers.json | rows=100 api_total=100 unique_pk=100 pages=1 bytes=38675
+[OK] customers: du 100% ban ghi, khong sot trang, khong trung khoa
+data/raw/20261011T040548Z/products.json | rows=50 api_total=50 unique_pk=50 pages=1 bytes=18093
+[OK] products: du 100% ban ghi, khong sot trang, khong trung khoa
+data/raw/20261011T040548Z/orders.json | rows=600 api_total=600 unique_pk=600 pages=6 bytes=241300
+[OK] orders: du 100% ban ghi, khong sot trang, khong trung khoa
+data/raw/20261011T040548Z/order_items.json | rows=1533 api_total=1533 unique_pk=1533 pages=16 bytes=541845
+[OK] order_items: du 100% ban ghi, khong sot trang, khong trung khoa
+data/raw/20261011T040548Z/payments.json | rows=536 api_total=536 unique_pk=536 pages=6 bytes=201980
+[OK] payments: du 100% ban ghi, khong sot trang, khong trung khoa
+ban ghi dau trong RAW orders: {"order_id": "ORD005001", "customer_id": "CUS000834", "order_date": "2026-07-01T18:57:00+07:00", "status": "completed", "shipping_city": "Bac Ninh", "channel": "mobile_app", "order_total": "19156500.00", "source_system": "ecommerce_api", "created_at": "2026-07-01T18:57:00+07:00", "updated_at": "2026-07-01T20:41:00+07:00"}
+[OK] RAW giu nguyen kieu du lieu goc cua API (so tien van la chuoi, chua chuan hoa)
+
+== 3. RAW Immutability
+save_raw('orders', ..., run_id='20261011T040548Z') lan 2 -> FileExistsError: File exists
+[OK] khong ghi de duoc file RAW cua run da ton tai
+2026-10-11 11:05:49,970 | INFO | extract | Reading dataset=orders path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\orders.json
+2026-10-11 11:05:49,970 | INFO | extract | Loaded dataset=orders rows=600 cols=10
+normalize(read_dataset(orders.json)) -> rows=600 order_total dtype=float64 updated_at dtype=datetime64[ns, UTC]
+sha256 orders.json truoc/sau buoc doc + normalize: 644563e03ba2a03d... / 644563e03ba2a03d...
+[OK] 5 file RAW khong doi (sha256) sau khi doc va chuan hoa
+
+== 4. Incremental: updated_after duoc truyen qua moi trang
+fetch_all_pages('orders', updated_after='2026-07-01T12:00:00Z')
+2026-10-11 11:05:50,002 | INFO | api_client | Fetched resource=orders page=1 rows=100 total_so_far=100
+2026-10-11 11:05:50,018 | INFO | api_client | Fetched resource=orders page=2 rows=100 total_so_far=200
+2026-10-11 11:05:50,018 | INFO | api_client | Fetched resource=orders page=3 rows=34 total_so_far=234
+[OK] so dong incremental (234) khop voi so dong updated_at > cutoff trong RAW (234)
+
+== Tong ket
+resource=orders page=1 rows=100 ... page=6 rows=100 total_so_far=600 | RAW saved to data/raw/20261011T040548Z/orders.json
+checks failed: 0
+
+exit code: 0
