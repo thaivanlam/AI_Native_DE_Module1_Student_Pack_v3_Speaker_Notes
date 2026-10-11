@@ -1,0 +1,75 @@
+# 06-upsert-log — Minh chung UPSERT vao PostgreSQL schema core (Bai 4)
+# Ngay chay: 2026-10-11 11:10:27
+# Nguon: data/raw/20261011T040548Z/ | Dich: postgresql+psycopg://de_user:***@localhost:5432/ecommerce
+
+== 1. Cau lenh UPSERT duoc sinh tu dong (vi du core.orders)
+INSERT INTO core.orders (order_id, customer_id, order_date, order_status, shipping_city, channel, order_total, source_system, created_at, updated_at) VALUES (:order_id, :customer_id, :order_date, :order_status, :shipping_city, :channel, :order_total, :source_system, :created_at, :updated_at) ON CONFLICT (order_id) DO UPDATE SET customer_id = EXCLUDED.customer_id, order_date = EXCLUDED.order_date, order_status = EXCLUDED.order_status, shipping_city = EXCLUDED.shipping_city, channel = EXCLUDED.channel, order_total = EXCLUDED.order_total, source_system = EXCLUDED.source_system, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at
+
+== 2. Nap 5 bang RAW -> core (moi bang 1 transaction, engine.begin())
+COUNT(*) truoc khi nap: {'customers': 1000, 'products': 500, 'orders': 5000, 'order_items': 12717, 'payments': 4517}
+2026-10-11 11:10:27,689 | INFO | pipeline | CORE load start | run_id=20261011T040548Z resources=customers,products,orders,order_items,payments
+2026-10-11 11:10:27,689 | INFO | extract | Reading dataset=customers path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\customers.json
+2026-10-11 11:10:27,689 | INFO | extract | Loaded dataset=customers rows=100 cols=10
+2026-10-11 11:10:27,776 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=50 updated=50
+2026-10-11 11:10:27,779 | INFO | extract | Reading dataset=products path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\products.json
+2026-10-11 11:10:27,782 | INFO | extract | Loaded dataset=products rows=50 cols=9
+2026-10-11 11:10:27,862 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=20 updated=30
+2026-10-11 11:10:27,866 | INFO | extract | Reading dataset=orders path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\orders.json
+2026-10-11 11:10:27,872 | INFO | extract | Loaded dataset=orders rows=600 cols=10
+2026-10-11 11:10:27,955 | INFO | load | [UPSERT] table=core.orders incoming=600 inserted=600 updated=0
+2026-10-11 11:10:27,961 | INFO | extract | Reading dataset=order_items path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\order_items.json
+2026-10-11 11:10:27,966 | INFO | extract | Loaded dataset=order_items rows=1533 cols=9
+2026-10-11 11:10:28,120 | INFO | load | [UPSERT] table=core.order_items incoming=1533 inserted=1533 updated=0
+2026-10-11 11:10:28,125 | INFO | extract | Reading dataset=payments path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\20261011T040548Z\payments.json
+2026-10-11 11:10:28,127 | INFO | extract | Loaded dataset=payments rows=536 cols=9
+2026-10-11 11:10:28,191 | INFO | load | [UPSERT] table=core.payments incoming=536 inserted=536 updated=0
+2026-10-11 11:10:28,193 | INFO | pipeline | CORE load end | run_id=20261011T040548Z inserted=2739 updated=80
+COUNT(*) sau khi nap:   {'customers': 1050, 'products': 520, 'orders': 5600, 'order_items': 14250, 'payments': 5053}
+[UPSERT] table=core.customers incoming=100 inserted=50 updated=50 | Verification: SELECT COUNT(*) FROM core.customers = 1050 (truoc: 1000)
+[OK] core.customers: inserted + updated = incoming, COUNT(*) tang dung bang inserted
+[UPSERT] table=core.products incoming=50 inserted=20 updated=30 | Verification: SELECT COUNT(*) FROM core.products = 520 (truoc: 500)
+[OK] core.products: inserted + updated = incoming, COUNT(*) tang dung bang inserted
+[UPSERT] table=core.orders incoming=600 inserted=600 updated=0 | Verification: SELECT COUNT(*) FROM core.orders = 5600 (truoc: 5000)
+[OK] core.orders: inserted + updated = incoming, COUNT(*) tang dung bang inserted
+[UPSERT] table=core.order_items incoming=1533 inserted=1533 updated=0 | Verification: SELECT COUNT(*) FROM core.order_items = 14250 (truoc: 12717)
+[OK] core.order_items: inserted + updated = incoming, COUNT(*) tang dung bang inserted
+[UPSERT] table=core.payments incoming=536 inserted=536 updated=0 | Verification: SELECT COUNT(*) FROM core.payments = 5053 (truoc: 4517)
+[OK] core.payments: inserted + updated = incoming, COUNT(*) tang dung bang inserted
+[OK] core.customers: 100/100 khoa cua RAW co trong DB, khong trung
+[OK] core.products: 50/50 khoa cua RAW co trong DB, khong trung
+[OK] core.orders: 600/600 khoa cua RAW co trong DB, khong trung
+[OK] core.order_items: 1533/1533 khoa cua RAW co trong DB, khong trung
+[OK] core.payments: 536/536 khoa cua RAW co trong DB, khong trung
+RAW : order_id=ORD005001 status=completed order_total='19156500.00' updated_at=2026-07-01T20:41:00+07:00
+CORE: order_id=ORD005001 order_status=completed order_total=Decimal('19156500.00') updated_at=2026-07-01T13:41:00+00:00
+[OK] gia tri trong core khop RAW (NUMERIC, timestamptz cung thoi diem)
+
+== 3. Transaction rollback khi vi pham rang buoc
+upsert_dataframe('customers', 3 dong: 2 dong hop le + 1 dong status='banned')
+-> IntegrityError: new row for relation "customers" violates check constraint "customers_status_check"
+SELECT COUNT(*) FROM core.customers WHERE customer_id LIKE 'DEMO%' = 0
+[OK] ca lo bi rollback: 2 dong hop le cung khong duoc ghi
+[OK] COUNT(*) cac bang khong doi sau lo loi
+
+# Muc 4-5 chay rieng luc 2026-10-11 11:12:09: python scripts/demo_upsert.py 20261011T040548Z --checks-only
+
+== 4. Update ban ghi da ton tai (chay trong transaction, sau do rollback)
+upsert lai ORD005001 voi order_total=1.0, shipping_city='Demo City'
+2026-10-11 11:12:09,504 | INFO | load | [UPSERT] table=core.orders incoming=1 inserted=0 updated=1
+-> {'inserted': 0, 'updated': 1, 'inserted_or_updated': 1} | order_total=1.00 shipping_city=Demo City customer_id=CUS000834 | COUNT(*)=5600
+[OK] khoa da ton tai -> updated=1, inserted=0, gia tri moi ghi de, khong them dong
+sau rollback: order_total=19156500.00
+[OK] rollback tra lai gia tri cu
+
+== 5. NaN / NaT / <NA> cua pandas -> NULL (chay trong transaction, sau do rollback)
+dau vao: phone=np.float64(nan) city=<NA>
+2026-10-11 11:12:09,540 | INFO | load | [UPSERT] table=core.customers incoming=1 inserted=1 updated=0
+trong DB: phone IS NULL = True | city IS NULL = True
+[OK] NaN va <NA> duoc ghi thanh NULL
+[OK] COUNT(*) cac bang khong doi sau muc 4-5 (da rollback het)
+
+== Tong ket
+[UPSERT] table=core.orders incoming=600 inserted=600 updated=0 | Verification: SELECT COUNT(*) FROM core.orders = 5600
+checks failed: 0
+
+exit code: 0

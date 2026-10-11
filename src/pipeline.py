@@ -1,18 +1,25 @@
-"""Buổi 6: API -> RAW. Payload thô được lưu vào data/raw/<run_id>/ trước mọi bước transform."""
+"""Buổi 6: API -> RAW -> CORE. Payload thô được lưu vào data/raw/<run_id>/ trước mọi bước transform."""
 import argparse
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from src.api_client import fetch_all_pages
 from src.config import SETTINGS
+from src.extract_files import read_dataset
+from src.load_postgres import upsert_dataframe
 from src.logger import get_logger
+from src.transform import normalize
 
 log = get_logger("pipeline")
 
 # Thứ tự theo phụ thuộc khóa ngoại: bảng cha trước, bảng con sau.
 API_RESOURCES = ("customers", "products", "orders", "order_items", "payments")
+# Trường của API có tên khác cột trong schema core.
+CORE_COLUMN_RENAMES = {"orders": {"status": "order_status"}}
 
 
 def new_run_id() -> str:
@@ -59,6 +66,22 @@ def extract_api_to_raw(
     return raw_files
 
 
+def load_raw_to_core(run_id: str, resources: tuple = API_RESOURCES) -> dict:
+    log.info("CORE load start | run_id=%s resources=%s", run_id, ",".join(resources))
+    stats = {}
+    for resource in resources:
+        df = normalize(read_dataset(SETTINGS.raw_dir / run_id / f"{resource}.json"))
+        df = df.rename(columns=CORE_COLUMN_RENAMES.get(resource, {}))
+        stats[resource] = upsert_dataframe(resource, df)
+    log.info(
+        "CORE load end | run_id=%s inserted=%d updated=%d",
+        run_id,
+        sum(s["inserted"] for s in stats.values()),
+        sum(s["updated"] for s in stats.values()),
+    )
+    return stats
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="API ingestion (API -> RAW)")
     parser.add_argument("--run-id", default=None, help="Mặc định: timestamp UTC hiện tại")
@@ -68,13 +91,25 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--updated-after", default=None, help="Mốc ISO 8601 có múi giờ")
     parser.add_argument("--page-size", type=int, default=100)
+    parser.add_argument("--load", action="store_true", help="Upsert RAW vừa lấy vào schema core")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+    run_id = args.run_id or new_run_id()
+    resources = tuple(args.resources)
     try:
-        extract_api_to_raw(args.run_id, tuple(args.resources), args.updated_after, args.page_size)
+        extract_api_to_raw(run_id, resources, args.updated_after, args.page_size)
     except (RuntimeError, FileExistsError) as exc:
         log.error("API extract failed | %s: %s", type(exc).__name__, exc)
         sys.exit(1)
+    if args.load:
+        try:
+            load_raw_to_core(run_id, resources)
+        except (SQLAlchemyError, ValueError) as exc:
+            log.error(
+                "CORE load failed, transaction rolled back | %s: %s",
+                type(exc).__name__, str(exc).splitlines()[0],
+            )
+            sys.exit(1)
