@@ -1,0 +1,31 @@
+== Cross-Table Integrity & Chronology — D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\dirty\day_2026-07-02 ==
+products: valid=29 rejected=1
+products id=PRD000002 category_id=CAT999 NOT FOUND (FK_CATEGORY_NOT_FOUND)
+
+orders: valid=94 rejected=6
+orders id=ORD005001 customer_id=CUS999999 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+orders id=ORD005013 customer_id=CUS001027 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+orders id=ORD005014 customer_id=CUS001037 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+orders id=ORD005047 customer_id=CUS001008 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+orders id=ORD005083 customer_id=CUS001018 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+orders id=ORD005093 customer_id=CUS001040 NOT FOUND (FK_CUSTOMER_NOT_FOUND)
+
+order_items: valid=208 rejected=12
+order_items id=ITM00012719 product_id=PRD999999 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012721 order_id=ORD999999 NOT FOUND (FK_ORDER_NOT_FOUND)
+order_items id=ITM00012723 order_id=ORD005003 NOT FOUND (FK_ORDER_NOT_FOUND)
+order_items id=ITM00012724 order_id=ORD005003 NOT FOUND (FK_ORDER_NOT_FOUND)
+order_items id=ITM00012725 order_id=ORD005003 NOT FOUND (FK_ORDER_NOT_FOUND)
+order_items id=ITM00012738 product_id=PRD000503 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012756 product_id=PRD000511 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012768 product_id=PRD000518 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012787 product_id=PRD000514 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012837 product_id=PRD000504 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012877 product_id=PRD000520 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+order_items id=ITM00012902 product_id=PRD000512 NOT FOUND (FK_PRODUCT_NOT_FOUND)
+
+payments: valid=87 rejected=3
+payments id=PAY004518 order_id=ORD999999 NOT FOUND (FK_ORDER_NOT_FOUND)
+payments id=PAY004520 order_id=ORD005003 NOT FOUND (FK_ORDER_NOT_FOUND)
+payments id=PAY004607 order_id=ORD005101 NOT FOUND (FK_ORDER_NOT_FOUND)
+
