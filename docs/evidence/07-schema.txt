@@ -1,0 +1,71 @@
+== customers ==
+file=customers_daily.csv rows=40 required_cols=4 thiếu cột: không
+rows có missing value: 1/40
+row_id=CUS000001 score=100 errors=[]
+row_id=CUS000003 score=100 errors=[]
+row_id=CUS000003 score=100 errors=[]
+row_id=CUS000004 score=75 errors=[MISSING_REQUIRED]
+  -> missing_cols=['full_name']
+row_id=CUS000005 score=100 errors=[]
+row_id=CUS000006 score=100 errors=[]
+row_id=CUS000007 score=100 errors=[]
+row_id=CUS000008 score=100 errors=[]
+row_id=CUS000009 score=100 errors=[]
+row_id=CUS000010 score=100 errors=[]
+
+== products ==
+file=products_daily.csv rows=30 required_cols=5 thiếu cột: không
+rows có missing value: 0/30
+row_id=PRD000001 score=100 errors=[]
+row_id=PRD000002 score=100 errors=[]
+row_id=PRD000004 score=100 errors=[]
+row_id=PRD000004 score=100 errors=[]
+row_id=PRD000005 score=100 errors=[]
+row_id=PRD000006 score=100 errors=[]
+row_id=PRD000007 score=100 errors=[]
+row_id=PRD000008 score=100 errors=[]
+row_id=PRD000009 score=100 errors=[]
+row_id=PRD000010 score=100 errors=[]
+
+== orders ==
+file=orders_daily.csv rows=100 required_cols=5 thiếu cột: không
+rows có missing value: 0/100
+row_id=ORD005001 score=100 errors=[]
+row_id=ORD005002 score=100 errors=[]
+row_id=ORD005004 score=100 errors=[]
+row_id=ORD005004 score=100 errors=[]
+row_id=ORD005005 score=100 errors=[]
+row_id=ORD005006 score=100 errors=[]
+row_id=ORD005007 score=100 errors=[]
+row_id=ORD005008 score=100 errors=[]
+row_id=ORD005009 score=100 errors=[]
+row_id=ORD005010 score=100 errors=[]
+
+== order_items ==
+file=order_items_daily.csv rows=220 required_cols=6 thiếu cột: không
+rows có missing value: 0/220
+row_id=ITM00012718 score=100 errors=[]
+row_id=ITM00012719 score=100 errors=[]
+row_id=ITM00012720 score=100 errors=[]
+row_id=ITM00012721 score=100 errors=[]
+row_id=ITM00012722 score=100 errors=[]
+row_id=ITM00012723 score=100 errors=[]
+row_id=ITM00012724 score=100 errors=[]
+row_id=ITM00012725 score=100 errors=[]
+row_id=ITM00012726 score=100 errors=[]
+row_id=ITM00012727 score=100 errors=[]
+
+== payments ==
+file=payments_daily.json rows=90 required_cols=5 thiếu cột: không
+rows có missing value: 0/90
+row_id=PAY004518 score=100 errors=[]
+row_id=PAY004519 score=100 errors=[]
+row_id=PAY004520 score=100 errors=[]
+row_id=PAY004521 score=100 errors=[]
+row_id=PAY004522 score=100 errors=[]
+row_id=PAY004523 score=100 errors=[]
+row_id=PAY004524 score=100 errors=[]
+row_id=PAY004525 score=100 errors=[]
+row_id=PAY004526 score=100 errors=[]
+row_id=PAY004527 score=100 errors=[]
+
