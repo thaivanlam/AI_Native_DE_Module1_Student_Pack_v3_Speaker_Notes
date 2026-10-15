@@ -1,0 +1,20 @@
+== Business Rules Validation — D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\dirty\day_2026-07-02 ==
+customers: valid=38 rejected=2
+  per-rule: INVALID_EMAIL: 1, INVALID_STATUS: 1
+products: valid=29 rejected=1
+  per-rule: NEGATIVE_PRICE: 1
+orders: valid=99 rejected=1
+  per-rule: INVALID_STATUS: 1
+order_items: valid=218 rejected=2
+  per-rule: INVALID_QUANTITY: 1, NEGATIVE_DISCOUNT: 1
+payments: valid=88 rejected=2
+  per-rule: INVALID_PAYMENT_STATUS: 1, NEGATIVE_AMOUNT: 1
+
+PER-RULE VIOLATIONS (tổng 5 bảng):
+INVALID_STATUS: 2
+INVALID_EMAIL: 1
+NEGATIVE_PRICE: 1
+INVALID_QUANTITY: 1
+NEGATIVE_DISCOUNT: 1
+INVALID_PAYMENT_STATUS: 1
+NEGATIVE_AMOUNT: 1
