@@ -81,7 +81,8 @@ def _row_errors(name, df):
         gross = (pd.to_numeric(df['quantity'], errors='coerce')
                  * pd.to_numeric(df['unit_price'], errors='coerce'))
         for i in range(len(df)):
-            if pd.notna(discount[i]) and pd.notna(gross[i]) and discount[i] > gross[i]:
+            if (pd.notna(discount.iloc[i]) and pd.notna(gross.iloc[i])
+                    and discount.iloc[i] > gross.iloc[i]):
                 errors[i].append(CONSISTENCY_CODE)
 
     return errors

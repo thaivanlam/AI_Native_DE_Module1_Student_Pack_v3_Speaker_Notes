@@ -1,0 +1,44 @@
+{
+  "run_id": "20261015T082310Z",
+  "data_dir": "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\dirty\\day_2026-07-02",
+  "generated_at": "2026-10-15T08:23:10.063219+00:00",
+  "invariant": "input = valid + rejected",
+  "invariant_ok": true,
+  "total": {
+    "input": 480,
+    "valid": 451,
+    "rejected": 29
+  },
+  "datasets": [
+    {
+      "dataset": "customers",
+      "input": 40,
+      "valid": 38,
+      "rejected": 2
+    },
+    {
+      "dataset": "products",
+      "input": 30,
+      "valid": 28,
+      "rejected": 2
+    },
+    {
+      "dataset": "orders",
+      "input": 100,
+      "valid": 93,
+      "rejected": 7
+    },
+    {
+      "dataset": "order_items",
+      "input": 220,
+      "valid": 206,
+      "rejected": 14
+    },
+    {
+      "dataset": "payments",
+      "input": 90,
+      "valid": 86,
+      "rejected": 4
+    }
+  ]
+}

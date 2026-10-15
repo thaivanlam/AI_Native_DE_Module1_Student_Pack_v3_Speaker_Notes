@@ -55,8 +55,8 @@ def split_cross_table_invalid(name, df, reference_ids=None, order_dates=None):
         order_dates_series = pd.to_datetime(
             df['order_id'].map(order_dates), errors='coerce', format='ISO8601')
         for i in range(len(df)):
-            if (pd.notna(payment_dates[i]) and pd.notna(order_dates_series[i])
-                    and payment_dates[i] < order_dates_series[i]):
+            if (pd.notna(payment_dates.iloc[i]) and pd.notna(order_dates_series.iloc[i])
+                    and payment_dates.iloc[i] < order_dates_series.iloc[i]):
                 errors[i].append(CHRONOLOGY_CODE)
 
     df = df.copy()
