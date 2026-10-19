@@ -23,7 +23,7 @@ REQUIRED = {
 }
 
 # Trường bắt buộc phải có giá trị (không NULL, không chuỗi rỗng)
-REQUIRED_VALUES = REQUIRED
+REQUIRED_VALUES = {name: columns.copy() for name, columns in REQUIRED.items()}
 
 # Cột khóa chính dùng làm row_id trong log
 ID_COLUMN = {
@@ -66,6 +66,7 @@ def score_rows(name, df):
 
     Trả về DataFrame gồm: row_id, score, errors, missing_cols.
     """
+    validate_schema(name, df)
     required = REQUIRED_VALUES[name]
     id_col = ID_COLUMN[name]
     records = []
@@ -78,7 +79,7 @@ def score_rows(name, df):
             'errors': [MISSING_REQUIRED] if miss else [],
             'missing_cols': miss,
         })
-    return pd.DataFrame(records)
+    return pd.DataFrame(records, columns=['row_id', 'score', 'errors', 'missing_cols'])
 
 
 def format_errors(errors):
