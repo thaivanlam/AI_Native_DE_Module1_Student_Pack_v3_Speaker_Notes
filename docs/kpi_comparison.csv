@@ -1,5 +1,5 @@
 kpi,before,after,diff
-total_revenue,61706432000.00,68932835500.00,7226403500.00
-order_count,5000,5600,600
-completed_orders,3880,4241,361
-total_items_sold,16659,18578,1919
+total_revenue,68932835500.00,68932835500.00,0.00
+order_count,5600,5600,0
+completed_orders,4241,4241,0
+total_items_sold,18578,18578,0

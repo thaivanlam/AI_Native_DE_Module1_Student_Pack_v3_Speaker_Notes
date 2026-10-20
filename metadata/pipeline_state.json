@@ -1,7 +1,7 @@
 {
-  "last_run_id": "99e774ef-63b1-4b87-b89b-17550da1aeae",
-  "last_successful_at": "2026-10-20T10:20:51.851057+00:00",
-  "last_source": "api",
+  "last_run_id": "d51204ca-d651-4e4c-89ef-0f14121a3c84",
+  "last_successful_at": "2026-10-20T11:52:42.400275+00:00",
+  "last_source": "both",
   "status": "success",
   "api_watermarks": {
     "orders": "2026-07-01T18:44:00+00:00",

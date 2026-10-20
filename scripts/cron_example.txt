@@ -1,5 +1,17 @@
-# Ví dụ: chạy 02:00 hàng ngày trên macOS/Linux (điều chỉnh đường dẫn tuyệt đối)
-0 2 * * * /ABSOLUTE/PATH/AI_Native_DE_Module1_8_Buoi/scripts/run_daily.sh >> /ABSOLUTE/PATH/AI_Native_DE_Module1_8_Buoi/logs/cron.log 2>&1
+# Ví dụ cho Linux/WSL/macOS: 02:00 mỗi ngày theo múi giờ máy chạy cron.
+# Thay /opt/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes bằng ROOT thực tế
+# ở CẢ HAI vị trí bên dưới; không dùng đường dẫn Windows D:\... trong cron.
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+0 2 * * * /opt/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes/scripts/run_daily.sh >> /opt/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes/logs/cron.log 2>&1
 
-# Trong lớp: KHÔNG yêu cầu sinh viên bật cron ngay. Mục tiêu là đọc/giải thích biểu thức,
-# sau đó chạy scripts/run_daily.sh thủ công để kiểm chứng trước khi schedule.
+# Chuẩn bị trong thư mục gốc dự án trước khi dùng crontab -e:
+#   mkdir -p logs
+#   chmod +x scripts/run_daily.sh
+#   ./scripts/run_daily.sh
+#   echo $?  # 0 khi thành công; xem logs/pipeline_YYYYMMDD.log
+# .venv và các thư viện phải được tạo trên hệ điều hành chạy cron.
+# PostgreSQL và Mock API phải sẵn sàng lúc 02:00.
+# Script tự chuyển về ROOT và ghi stdout/stderr vào log theo ngày (append).
+# cron.log nhận lỗi khởi chạy script, chẳng hạn sai đường dẫn/quyền thực thi.
+# Đây là cấu hình mẫu; không tự cài cron vào hệ thống.

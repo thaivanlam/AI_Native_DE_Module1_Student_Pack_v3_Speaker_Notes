@@ -1,0 +1,261 @@
+Bai 5 - Automation Script & Cron Scheduling
+Verification date: 2026-10-20 (Asia/Saigon)
+Shell: Git Bash; Python virtual environment: .venv/Scripts
+
+bash -n scripts/run_daily.sh: PASS (exit 0)
+chmod +x scripts/run_daily.sh; test -x: PASS
+Isolated wrapper check, fake Python exit 0: PASS (shell exit 0)
+Isolated wrapper check, fake Python exit 7: PASS (shell exit 7)
+Run from another working directory, ROOT containing spaces: PASS
+Daily log creation, stdout/stderr capture, append on rerun, CLI arguments: PASS
+These isolated checks use fake Python; they do not prove ETL success.
+
+REAL PIPELINE RUN
+$ ./scripts/run_daily.sh
+exit_code=1
+Checkpoint unchanged after failure: PASS
+Log file: logs/pipeline_20261020.log
+
+
+[2026-10-20T18:48:25+07:00] Starting daily pipeline | root=/d/Data_Engineer/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes
+2026-10-20 18:48:26,866 | INFO | pipeline | [1/8] Khởi tạo | run_id=8fa86eac-3d1a-4803-aa49-694a953932f7
+2026-10-20 18:48:26,869 | INFO | pipeline | [2/8] Trích xuất | source=both | run_id=8fa86eac-3d1a-4803-aa49-694a953932f7
+2026-10-20 18:48:26,869 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 18:48:26,871 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 18:48:26,871 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 18:48:26,872 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 18:48:30,946 | WARNING | api_client | API call failed attempt 1/3 resource=orders page=1 | ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=100&updated_after=2026-07-01T18%3A44%3A00%2B00%3A00 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")) | backoff=1s
+2026-10-20 18:48:36,018 | WARNING | api_client | API call failed attempt 2/3 resource=orders page=1 | ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=100&updated_after=2026-07-01T18%3A44%3A00%2B00%3A00 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")) | backoff=2s
+2026-10-20 18:48:42,137 | WARNING | api_client | API call failed attempt 3/3 resource=orders page=1 | ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=100&updated_after=2026-07-01T18%3A44%3A00%2B00%3A00 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")) | backoff=4s
+2026-10-20 18:48:46,138 | ERROR | pipeline | [ALERT] Pipeline failed (exit 1) | run_id=8fa86eac-3d1a-4803-aa49-694a953932f7 error_type=RuntimeError message=API failed after 3 attempts: orders page 1
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connection.py", line 239, in _new_conn
+    sock = connection.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connectionpool.py", line 793, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connectionpool.py", line 499, in _make_request
+    conn.request(
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connection.py", line 567, in request
+    self.endheaders()
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.python-runtime\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.python-runtime\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.python-runtime\Lib\http\client.py", line 1037, in send
+    self.connect()
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connection.py", line 398, in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connection.py", line 254, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\adapters.py", line 696, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\connectionpool.py", line 847, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\urllib3\util\retry.py", line 555, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=100&updated_after=2026-07-01T18%3A44%3A00%2B00%3A00 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\api_client.py", line 42, in fetch_page
+    response = requests.get(url, params=params, headers=headers, timeout=timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\api.py", line 87, in get
+    return request("get", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\api.py", line 71, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\requests\adapters.py", line 729, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /orders?page=1&page_size=100&updated_after=2026-07-01T18%3A44%3A00%2B00%3A00 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 301, in main
+    result = run(args.input_dir, args.source, args.refresh_mart, args.skip_processed_file, run_id=run_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 226, in run
+    frames = _source_frames(input_dir, source, run_id, state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 161, in _source_frames
+    frames.update(_api_frames(run_id, state, TRANSACTION_RESOURCES))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 146, in _api_frames
+    rows = fetch_all_pages(name, updated_after=watermark, page_size=100)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\api_client.py", line 80, in fetch_all_pages
+    payload = fetch_page(
+              ^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\api_client.py", line 64, in fetch_page
+    raise RuntimeError(
+RuntimeError: API failed after 3 attempts: orders page 1
+
+
+Environment limitations:
+- Mock API localhost:8000 is not running; extraction fails after 3 retries.
+- PostgreSQL service postgresql-x64-18 is stopped. Start-Service failed: Cannot open service.
+- Docker daemon is not running.
+- Real successful pipeline execution (exit 0) is NOT verified.
+- Start PostgreSQL and Mock API, then rerun ./scripts/run_daily.sh to obtain success evidence.
+- Cron example is prepared; no system crontab was installed.
+
+
+RETRY - REAL PIPELINE RUN
+$ ./scripts/run_daily.sh
+
+[2026-10-20T18:50:31+07:00] Starting daily pipeline | root=/d/Data_Engineer/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes
+2026-10-20 18:50:35,311 | INFO | pipeline | [1/8] Khởi tạo | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,317 | INFO | pipeline | [2/8] Trích xuất | source=both | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,318 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 18:50:35,321 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 18:50:35,322 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 18:50:35,325 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 18:50:35,365 | INFO | api_client | Fetched resource=orders page=1 rows=0 total_so_far=0
+2026-10-20 18:50:35,365 | INFO | pipeline | RAW saved resource=orders rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\9bd321a2-7ae5-4fb8-8199-a37a8808d922\orders.json
+2026-10-20 18:50:35,390 | INFO | api_client | Fetched resource=order_items page=1 rows=0 total_so_far=0
+2026-10-20 18:50:35,391 | INFO | pipeline | RAW saved resource=order_items rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\9bd321a2-7ae5-4fb8-8199-a37a8808d922\order_items.json
+2026-10-20 18:50:35,407 | INFO | api_client | Fetched resource=payments page=1 rows=0 total_so_far=0
+2026-10-20 18:50:35,408 | INFO | pipeline | RAW saved resource=payments rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\9bd321a2-7ae5-4fb8-8199-a37a8808d922\payments.json
+2026-10-20 18:50:35,408 | INFO | pipeline | Ingested source=file dataset=customers rows=100 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,408 | INFO | pipeline | Ingested source=file dataset=products rows=50 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,408 | INFO | pipeline | Ingested source=api dataset=orders rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,408 | INFO | pipeline | Ingested source=api dataset=order_items rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,409 | INFO | pipeline | Ingested source=api dataset=payments rows=0 run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,409 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,425 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,528 | INFO | pipeline | [5/8] Nạp Core Database | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,670 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 18:50:35,672 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,732 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 18:50:35,734 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,745 | INFO | load | [UPSERT] table=core.orders incoming=0 inserted=0 updated=0
+2026-10-20 18:50:35,746 | INFO | pipeline | [5/8] dataset=orders input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,752 | INFO | load | [UPSERT] table=core.order_items incoming=0 inserted=0 updated=0
+2026-10-20 18:50:35,752 | INFO | pipeline | [5/8] dataset=order_items input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,757 | INFO | load | [UPSERT] table=core.payments incoming=0 inserted=0 updated=0
+2026-10-20 18:50:35,758 | INFO | pipeline | [5/8] dataset=payments input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] dataset=orders 0 = 0 + 0 OK | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] dataset=order_items 0 = 0 + 0 OK | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,758 | INFO | pipeline | [6/8] dataset=payments 0 = 0 + 0 OK | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,761 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922
+2026-10-20 18:50:35,797 | INFO | refresh_mart | KPI before={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 18:50:35,798 | INFO | refresh_mart | Executing mart refresh SQL: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\sql\solutions\12_load_data_mart.sql
+2026-10-20 18:50:35,979 | ERROR | refresh_mart | Mart refresh failed; rolled back
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\refresh_mart.py", line 80, in refresh_mart
+    cursor.execute(sql)
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.InvalidColumnReference: there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-10-20 18:50:35,982 | ERROR | pipeline | [ALERT] Pipeline failed (exit 1) | run_id=9bd321a2-7ae5-4fb8-8199-a37a8808d922 error_type=InvalidColumnReference message=there is no unique or exclusion constraint matching the ON CONFLICT specification
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 301, in main
+    result = run(args.input_dir, args.source, args.refresh_mart, args.skip_processed_file, run_id=run_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 271, in run
+    refresh_mart()
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\refresh_mart.py", line 80, in refresh_mart
+    cursor.execute(sql)
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.InvalidColumnReference: there is no unique or exclusion constraint matching the ON CONFLICT specification
+
+exit_code=1
+
+
+RETRY AFTER MART SCD2 COMPATIBILITY FIX
+SQL verification in a disposable schema, rolled back after checks:
+- Type 1 initial load and replay: PASS (14250 facts)
+- SCD2 version creation, history retention, replay and same-day correction: PASS
+- pytest tests/test_refresh_mart.py -q: 4 passed
+$ ./scripts/run_daily.sh
+
+[2026-10-20T18:52:33+07:00] Starting daily pipeline | root=/d/Data_Engineer/AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes
+2026-10-20 18:52:41,126 | INFO | pipeline | [1/8] Khởi tạo | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,148 | INFO | pipeline | [2/8] Trích xuất | source=both | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,148 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 18:52:41,158 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 18:52:41,158 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 18:52:41,162 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 18:52:41,190 | INFO | api_client | Fetched resource=orders page=1 rows=0 total_so_far=0
+2026-10-20 18:52:41,193 | INFO | pipeline | RAW saved resource=orders rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\d51204ca-d651-4e4c-89ef-0f14121a3c84\orders.json
+2026-10-20 18:52:41,240 | INFO | api_client | Fetched resource=order_items page=1 rows=0 total_so_far=0
+2026-10-20 18:52:41,242 | INFO | pipeline | RAW saved resource=order_items rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\d51204ca-d651-4e4c-89ef-0f14121a3c84\order_items.json
+2026-10-20 18:52:41,274 | INFO | api_client | Fetched resource=payments page=1 rows=0 total_so_far=0
+2026-10-20 18:52:41,275 | INFO | pipeline | RAW saved resource=payments rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\d51204ca-d651-4e4c-89ef-0f14121a3c84\payments.json
+2026-10-20 18:52:41,277 | INFO | pipeline | Ingested source=file dataset=customers rows=100 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,278 | INFO | pipeline | Ingested source=file dataset=products rows=50 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,278 | INFO | pipeline | Ingested source=api dataset=orders rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,278 | INFO | pipeline | Ingested source=api dataset=order_items rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,278 | INFO | pipeline | Ingested source=api dataset=payments rows=0 run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,279 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,333 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,553 | INFO | pipeline | [5/8] Nạp Core Database | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,674 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 18:52:41,677 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,751 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 18:52:41,769 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,814 | INFO | load | [UPSERT] table=core.orders incoming=0 inserted=0 updated=0
+2026-10-20 18:52:41,819 | INFO | pipeline | [5/8] dataset=orders input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,841 | INFO | load | [UPSERT] table=core.order_items incoming=0 inserted=0 updated=0
+2026-10-20 18:52:41,843 | INFO | pipeline | [5/8] dataset=order_items input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,862 | INFO | load | [UPSERT] table=core.payments incoming=0 inserted=0 updated=0
+2026-10-20 18:52:41,865 | INFO | pipeline | [5/8] dataset=payments input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,865 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,866 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,866 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,866 | INFO | pipeline | [6/8] dataset=orders 0 = 0 + 0 OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,866 | INFO | pipeline | [6/8] dataset=order_items 0 = 0 + 0 OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,867 | INFO | pipeline | [6/8] dataset=payments 0 = 0 + 0 OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,885 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:41,948 | INFO | refresh_mart | KPI before={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 18:52:41,948 | INFO | refresh_mart | Executing mart refresh SQL: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\sql\solutions\12_load_data_mart.sql
+2026-10-20 18:52:42,393 | INFO | refresh_mart | Mart refresh committed | KPI after={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 18:52:42,398 | INFO | refresh_mart | KPI total_revenue before=68932835500.00 after=68932835500.00 diff=0.00
+2026-10-20 18:52:42,398 | INFO | refresh_mart | KPI order_count before=5600 after=5600 diff=0
+2026-10-20 18:52:42,398 | INFO | refresh_mart | KPI completed_orders before=4241 after=4241 diff=0
+2026-10-20 18:52:42,399 | INFO | refresh_mart | KPI total_items_sold before=18578 after=18578 diff=0
+2026-10-20 18:52:42,399 | INFO | refresh_mart | KPI comparison saved: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\docs\kpi_comparison.csv
+2026-10-20 18:52:42,400 | INFO | pipeline | [7/8] Làm mới Data Mart OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:42,400 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:42,411 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+2026-10-20 18:52:42,415 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84 status=success
+
+exit_code=0
+Checkpoint last_run_id=d51204ca-d651-4e4c-89ef-0f14121a3c84
+SUCCESS: real pipeline completed all eight steps, refreshed Mart, and committed checkpoint.
+This successful retry supersedes the limitations and failures recorded above.
+API returned zero new transactional rows because existing watermarks were already current.
+Cron example remains prepared only; no system crontab was installed.

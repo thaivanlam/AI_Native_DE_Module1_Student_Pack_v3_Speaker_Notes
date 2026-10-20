@@ -100,6 +100,51 @@ ON CONFLICT (customer_id) DO UPDATE SET
   full_name = EXCLUDED.full_name, city = EXCLUDED.city,
   customer_segment = EXCLUDED.customer_segment, status = EXCLUDED.status;
 
+-- The optional Buoi 4 bonus replaces UNIQUE(product_id) with SCD2 keys.
+-- Keep that history instead of restoring the Type 1 unique constraint.
+DO $$
+BEGIN
+IF EXISTS (
+  SELECT 1 FROM information_schema.columns
+  WHERE table_schema = 'mart' AND table_name = 'dim_product'
+    AND column_name = 'is_current'
+) THEN
+  -- Follow the bonus exercise's day-grain effective dates. Multiple changes
+  -- on the same day update that day's version rather than create an invalid range.
+  UPDATE mart.dim_product d
+  SET valid_to = (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - 1,
+      is_current = FALSE
+  FROM core.products p
+  WHERE p.product_id = d.product_id AND d.is_current
+    AND (d.list_price, d.cost_price, d.category_id)
+        IS DISTINCT FROM (p.unit_price, p.cost_price, p.category_id)
+    AND (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date > d.valid_from;
+
+  INSERT INTO mart.dim_product
+    (product_id, product_name, category_id, category, parent_category,
+     list_price, cost_price, status, valid_from, valid_to, is_current)
+  SELECT p.product_id, p.product_name, p.category_id, c.category_name,
+         COALESCE(pc.category_name, c.category_name), p.unit_price, p.cost_price, p.status,
+         CASE WHEN EXISTS (SELECT 1 FROM mart.dim_product old WHERE old.product_id = p.product_id)
+              THEN (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+              ELSE DATE '1900-01-01' END,
+         DATE '9999-12-31', TRUE
+  FROM core.products p
+  JOIN core.categories c ON c.category_id = p.category_id
+  LEFT JOIN core.categories pc ON pc.category_id = c.parent_category_id
+  WHERE NOT EXISTS (SELECT 1 FROM mart.dim_product d
+                    WHERE d.product_id = p.product_id AND d.is_current);
+
+  UPDATE mart.dim_product d
+  SET product_name = p.product_name, category_id = p.category_id,
+      category = c.category_name, parent_category = COALESCE(pc.category_name, c.category_name),
+      list_price = p.unit_price, cost_price = p.cost_price, status = p.status
+  FROM core.products p
+  JOIN core.categories c ON c.category_id = p.category_id
+  LEFT JOIN core.categories pc ON pc.category_id = c.parent_category_id
+  WHERE d.product_id = p.product_id AND d.is_current
+    AND (p.updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date >= d.valid_from;
+ELSE
 INSERT INTO mart.dim_product
   (product_id, product_name, category_id, category, parent_category,
    list_price, cost_price, status)
@@ -113,6 +158,8 @@ ON CONFLICT (product_id) DO UPDATE SET
   category = EXCLUDED.category, parent_category = EXCLUDED.parent_category,
   list_price = EXCLUDED.list_price, cost_price = EXCLUDED.cost_price,
   status = EXCLUDED.status;
+END IF;
+END $$;
 
 INSERT INTO mart.dim_payment_method
   (payment_method_key, payment_method, payment_method_name, is_digital)
@@ -161,6 +208,9 @@ FROM core.order_items oi
 JOIN core.orders o ON o.order_id = oi.order_id
 JOIN mart.dim_customer dc ON dc.customer_id = o.customer_id
 JOIN mart.dim_product dp ON dp.product_id = oi.product_id
+ AND (o.order_date AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+     BETWEEN COALESCE((to_jsonb(dp)->>'valid_from')::date, DATE '1900-01-01')
+         AND COALESCE((to_jsonb(dp)->>'valid_to')::date, DATE '9999-12-31')
 JOIN mart.dim_order_status dos ON dos.order_status = o.order_status
 LEFT JOIN order_payment op ON op.order_id = o.order_id
 JOIN mart.dim_payment_method dpm ON dpm.payment_method = COALESCE(op.payment_method, 'unknown')
