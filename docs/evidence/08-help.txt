@@ -1,0 +1,14 @@
+usage: pipeline.py [-h] [--input-dir INPUT_DIR] [--source {file,api,both}]
+                   [--refresh-mart] [--skip-processed-file]
+
+Điều phối daily data pipeline
+
+options:
+  -h, --help            show this help message and exit
+  --input-dir INPUT_DIR
+                        Thư mục dữ liệu file theo ngày
+  --source {file,api,both}
+                        Nguồn dữ liệu
+  --refresh-mart        Làm mới Sales Data Mart sau khi nạp Core
+  --skip-processed-file
+                        Bỏ qua file batch đã xử lý thành công

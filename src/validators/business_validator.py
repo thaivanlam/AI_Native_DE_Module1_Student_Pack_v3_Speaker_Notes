@@ -50,9 +50,9 @@ def _row_errors(name, df):
     errors = [[] for _ in range(len(df))]
 
     # 1. Email hợp lệ (chỉ bảng customers)
-    if 'email' in df.columns:
+    if name == 'customers' and 'email' in df.columns:
         for i, value in enumerate(df['email']):
-            if not _is_blank(value) and not re.match(EMAIL_REGEX, str(value).strip()):
+            if not _is_blank(value) and not re.fullmatch(EMAIL_REGEX, str(value).strip()):
                 errors[i].append(EMAIL_CODE)
 
     # 2. Enum thuộc danh sách cho phép
@@ -76,7 +76,7 @@ def _row_errors(name, df):
 
     # 4. Consistency: discount_amount <= quantity * unit_price
     cols = {'discount_amount', 'quantity', 'unit_price'}
-    if cols <= set(df.columns):
+    if name == 'order_items' and cols <= set(df.columns):
         discount = pd.to_numeric(df['discount_amount'], errors='coerce')
         gross = (pd.to_numeric(df['quantity'], errors='coerce')
                  * pd.to_numeric(df['unit_price'], errors='coerce'))
@@ -92,6 +92,8 @@ def split_valid_invalid(name, df):
     """Tách df thành (valid_df, rejected_df) theo business rules.
 
     rejected_df có thêm cột error_code, nhiều lỗi nối bằng '|'.
+    Giữ nguyên dữ liệu và index đầu vào. Missing value thuộc tầng schema;
+    hàm này chỉ kiểm tra business rules trên các giá trị có mặt.
     """
     errors = _row_errors(name, df)
     df = df.copy()
@@ -117,6 +119,7 @@ def run(evidence_file=schema_validator.EVIDENCE_FILE.parent / '07-business.txt')
     for name in schema_validator.REQUIRED:
         df = schema_validator.load_dataset(name)
         valid_df, rejected_df = split_valid_invalid(name, df)
+        assert len(df) == len(valid_df) + len(rejected_df), name
         counts = count_violations(rejected_df)
         for code, n in counts.items():
             total[code] = total.get(code, 0) + n
