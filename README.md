@@ -37,6 +37,8 @@ Business Requirement → ERD → PostgreSQL OLTP → SQL Analytics → Sales Dat
 
 ## 2. Yêu cầu môi trường
 
+Hướng dẫn khởi tạo dự án trên Windows, cấu hình `.venv`, thư viện, VS Code và `.env`: [docs/project_setup.md](docs/project_setup.md).
+
 | Công cụ | Phiên bản | Ghi chú |
 |---|---|---|
 | Docker Desktop | mới nhất | chạy PostgreSQL 16 và Mock API |

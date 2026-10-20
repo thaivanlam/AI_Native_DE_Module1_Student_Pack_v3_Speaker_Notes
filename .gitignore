@@ -22,6 +22,7 @@ htmlcov/
 
 # ---------- Virtual environments ----------
 .venv/
+.python-runtime/
 .test-deps/
 .test-deps312/
 venv/
