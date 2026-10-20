@@ -1,9 +1,15 @@
 {
-  "last_run_id": "e803e5d8-406c-497a-a166-1ae32e3d1f35",
-  "last_successful_at": "2026-10-20T09:37:53.847768+00:00",
-  "last_source": "file",
+  "last_run_id": "dedd2fe9-8b8d-4b1c-948f-ff568c609bf2",
+  "last_successful_at": "2026-10-20T10:13:07.561308+00:00",
+  "last_source": "api",
   "status": "success",
-  "api_watermarks": {},
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
   "processed_file_batches": [
     "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
   ]

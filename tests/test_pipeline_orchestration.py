@@ -173,3 +173,32 @@ def test_main_logs_all_stages_and_run_id(batch, caplog, monkeypatch):
         assert any(f"[{step}/8]" in message for message in messages)
     assert any("SKIPPED" in message for message in messages)
     assert "exit 0" in messages[-1]
+
+
+@pytest.mark.parametrize("source", ["api", "both"])
+def test_empty_api_increment_completes_without_advancing_watermarks(batch, monkeypatch, source):
+    input_dir, events, settings = batch
+    monkeypatch.setattr(pipeline, "SETTINGS", dataclasses.replace(
+        settings, raw_dir=settings.root / "data" / "raw",
+    ))
+    monkeypatch.setattr(pipeline, "fetch_all_pages", lambda *args, **kwargs: [])
+    before = pipeline._read_state()["api_watermarks"]
+    result = pipeline.run(input_dir, source=source)
+    assert result["status"] == "success"
+    assert pipeline._read_state()["api_watermarks"] == before
+    api_names = pipeline.API_RESOURCES if source == "api" else pipeline.TRANSACTION_RESOURCES
+    assert all(frame.empty for name, frame in events if name in api_names)
+
+
+def test_hybrid_does_not_advance_api_watermarks_from_master_files(batch, monkeypatch):
+    input_dir, _, settings = batch
+    monkeypatch.setattr(pipeline, "SETTINGS", dataclasses.replace(
+        settings, raw_dir=settings.root / "data" / "raw",
+    ))
+    customer_path = input_dir / pipeline.DATA_FILES["customers"]
+    customers = pd.read_csv(customer_path)
+    customers["updated_at"] = "2026-07-03T00:00:00Z"
+    customers.to_csv(customer_path, index=False)
+    monkeypatch.setattr(pipeline, "fetch_all_pages", lambda *args, **kwargs: [])
+    pipeline.run(input_dir, source="both")
+    assert "customers" not in pipeline._read_state()["api_watermarks"]

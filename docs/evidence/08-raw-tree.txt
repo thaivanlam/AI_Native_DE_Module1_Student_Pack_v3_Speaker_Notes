@@ -1,0 +1,19 @@
+Bai 2 - RAW snapshots from actual CLI runs
+Run order: file -> both -> api (shared checkpoint).
+The API run resumes transaction watermarks written by the hybrid run.
+RAW contains original records plus capture metadata; files use exclusive creation.
+data/raw/
+  [source=file run_id=1fb62fef-2170-4a4e-9b93-b09e53039c5a: no API snapshot]
+  00d0a156-6f2c-4690-b590-496aff513fd4/  (source=both)
+    order_items.json  rows=1533 updated_after=None
+    orders.json  rows=600 updated_after=None
+    payments.json  rows=536 updated_after=None
+  dedd2fe9-8b8d-4b1c-948f-ff568c609bf2/  (source=api)
+    customers.json  rows=100 updated_after=None
+    order_items.json  rows=0 updated_after=2026-07-01T15:59:00+00:00
+    orders.json  rows=0 updated_after=2026-07-01T18:44:00+00:00
+    payments.json  rows=0 updated_after=2026-07-01T20:22:00+00:00
+    products.json  rows=50 updated_after=None
+
+Verification: all RAW records exactly match Mock API data after watermark filtering.
+Tests: python -m pytest -q -> 137 passed.

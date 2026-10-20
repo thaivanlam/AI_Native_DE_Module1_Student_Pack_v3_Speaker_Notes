@@ -1,0 +1,76 @@
+Command: python -m src.pipeline --source both
+
+2026-10-20 17:11:51,990 | INFO | pipeline | [1/8] Khởi tạo | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:11:51,993 | INFO | pipeline | [2/8] Trích xuất | source=both | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:11:51,994 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 17:11:52,002 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 17:11:52,002 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 17:11:52,008 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 17:11:54,365 | INFO | api_client | Fetched resource=orders page=1 rows=100 total_so_far=100
+2026-10-20 17:11:56,423 | INFO | api_client | Fetched resource=orders page=2 rows=100 total_so_far=200
+2026-10-20 17:11:58,512 | INFO | api_client | Fetched resource=orders page=3 rows=100 total_so_far=300
+2026-10-20 17:12:00,600 | INFO | api_client | Fetched resource=orders page=4 rows=100 total_so_far=400
+2026-10-20 17:12:02,704 | INFO | api_client | Fetched resource=orders page=5 rows=100 total_so_far=500
+2026-10-20 17:12:04,846 | INFO | api_client | Fetched resource=orders page=6 rows=100 total_so_far=600
+2026-10-20 17:12:04,894 | INFO | pipeline | RAW saved resource=orders rows=600 run_id=00d0a156-6f2c-4690-b590-496aff513fd4 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\orders.json
+2026-10-20 17:12:04,894 | INFO | extract | Reading dataset=orders path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\orders.json
+2026-10-20 17:12:04,901 | INFO | extract | Loaded dataset=orders rows=600 cols=10
+2026-10-20 17:12:07,166 | INFO | api_client | Fetched resource=order_items page=1 rows=100 total_so_far=100
+2026-10-20 17:12:09,264 | INFO | api_client | Fetched resource=order_items page=2 rows=100 total_so_far=200
+2026-10-20 17:12:11,334 | INFO | api_client | Fetched resource=order_items page=3 rows=100 total_so_far=300
+2026-10-20 17:12:13,431 | INFO | api_client | Fetched resource=order_items page=4 rows=100 total_so_far=400
+2026-10-20 17:12:15,638 | INFO | api_client | Fetched resource=order_items page=5 rows=100 total_so_far=500
+2026-10-20 17:12:17,735 | INFO | api_client | Fetched resource=order_items page=6 rows=100 total_so_far=600
+2026-10-20 17:12:19,822 | INFO | api_client | Fetched resource=order_items page=7 rows=100 total_so_far=700
+2026-10-20 17:12:21,930 | INFO | api_client | Fetched resource=order_items page=8 rows=100 total_so_far=800
+2026-10-20 17:12:24,070 | INFO | api_client | Fetched resource=order_items page=9 rows=100 total_so_far=900
+2026-10-20 17:12:26,157 | INFO | api_client | Fetched resource=order_items page=10 rows=100 total_so_far=1000
+2026-10-20 17:12:28,214 | INFO | api_client | Fetched resource=order_items page=11 rows=100 total_so_far=1100
+2026-10-20 17:12:30,263 | INFO | api_client | Fetched resource=order_items page=12 rows=100 total_so_far=1200
+2026-10-20 17:12:32,304 | INFO | api_client | Fetched resource=order_items page=13 rows=100 total_so_far=1300
+2026-10-20 17:12:34,357 | INFO | api_client | Fetched resource=order_items page=14 rows=100 total_so_far=1400
+2026-10-20 17:12:36,393 | INFO | api_client | Fetched resource=order_items page=15 rows=100 total_so_far=1500
+2026-10-20 17:12:38,431 | INFO | api_client | Fetched resource=order_items page=16 rows=33 total_so_far=1533
+2026-10-20 17:12:38,473 | INFO | pipeline | RAW saved resource=order_items rows=1533 run_id=00d0a156-6f2c-4690-b590-496aff513fd4 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\order_items.json
+2026-10-20 17:12:38,473 | INFO | extract | Reading dataset=order_items path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\order_items.json
+2026-10-20 17:12:38,493 | INFO | extract | Loaded dataset=order_items rows=1533 cols=9
+2026-10-20 17:12:40,620 | INFO | api_client | Fetched resource=payments page=1 rows=100 total_so_far=100
+2026-10-20 17:12:42,683 | INFO | api_client | Fetched resource=payments page=2 rows=100 total_so_far=200
+2026-10-20 17:12:44,763 | INFO | api_client | Fetched resource=payments page=3 rows=100 total_so_far=300
+2026-10-20 17:12:46,820 | INFO | api_client | Fetched resource=payments page=4 rows=100 total_so_far=400
+2026-10-20 17:12:48,865 | INFO | api_client | Fetched resource=payments page=5 rows=100 total_so_far=500
+2026-10-20 17:12:50,971 | INFO | api_client | Fetched resource=payments page=6 rows=36 total_so_far=536
+2026-10-20 17:12:51,035 | INFO | pipeline | RAW saved resource=payments rows=536 run_id=00d0a156-6f2c-4690-b590-496aff513fd4 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\payments.json
+2026-10-20 17:12:51,036 | INFO | extract | Reading dataset=payments path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\00d0a156-6f2c-4690-b590-496aff513fd4\payments.json
+2026-10-20 17:12:51,049 | INFO | extract | Loaded dataset=payments rows=536 cols=9
+2026-10-20 17:12:51,049 | INFO | pipeline | Ingested source=file dataset=customers rows=100 run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,051 | INFO | pipeline | Ingested source=file dataset=products rows=50 run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,051 | INFO | pipeline | Ingested source=api dataset=orders rows=600 run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,052 | INFO | pipeline | Ingested source=api dataset=order_items rows=1533 run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,052 | INFO | pipeline | Ingested source=api dataset=payments rows=536 run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,052 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,219 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,698 | INFO | pipeline | [5/8] Nạp Core Database | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,848 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 17:12:51,863 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:51,965 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 17:12:51,974 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:52,287 | INFO | load | [UPSERT] table=core.orders incoming=600 inserted=0 updated=600
+2026-10-20 17:12:52,292 | INFO | pipeline | [5/8] dataset=orders input=600 valid=600 reject=0 inserted=0 updated=600 | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:52,983 | INFO | load | [UPSERT] table=core.order_items incoming=1533 inserted=0 updated=1533
+2026-10-20 17:12:53,026 | INFO | pipeline | [5/8] dataset=order_items input=1533 valid=1533 reject=0 inserted=0 updated=1533 | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,493 | INFO | load | [UPSERT] table=core.payments incoming=536 inserted=0 updated=536
+2026-10-20 17:12:53,504 | INFO | pipeline | [5/8] dataset=payments input=536 valid=536 reject=0 inserted=0 updated=536 | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] dataset=orders 600 = 600 + 0 OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] dataset=order_items 1533 = 1533 + 0 OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,504 | INFO | pipeline | [6/8] dataset=payments 536 = 536 + 0 OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,523 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,524 | INFO | pipeline | [7/8] Làm mới Data Mart SKIPPED | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,525 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,538 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=00d0a156-6f2c-4690-b590-496aff513fd4
+2026-10-20 17:12:53,544 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=00d0a156-6f2c-4690-b590-496aff513fd4 status=success
+
+Exit code: 0

@@ -1,0 +1,49 @@
+Command: python -m src.pipeline --source api
+
+2026-10-20 17:12:55,813 | INFO | pipeline | [1/8] Khởi tạo | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:12:55,813 | INFO | pipeline | [2/8] Trích xuất | source=api | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:12:57,852 | INFO | api_client | Fetched resource=customers page=1 rows=100 total_so_far=100
+2026-10-20 17:12:57,858 | INFO | pipeline | RAW saved resource=customers rows=100 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\customers.json
+2026-10-20 17:12:57,859 | INFO | extract | Reading dataset=customers path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\customers.json
+2026-10-20 17:12:57,864 | INFO | extract | Loaded dataset=customers rows=100 cols=10
+2026-10-20 17:12:59,965 | INFO | api_client | Fetched resource=products page=1 rows=50 total_so_far=50
+2026-10-20 17:12:59,983 | INFO | pipeline | RAW saved resource=products rows=50 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\products.json
+2026-10-20 17:12:59,983 | INFO | extract | Reading dataset=products path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\products.json
+2026-10-20 17:12:59,991 | INFO | extract | Loaded dataset=products rows=50 cols=9
+2026-10-20 17:13:02,109 | INFO | api_client | Fetched resource=orders page=1 rows=0 total_so_far=0
+2026-10-20 17:13:02,135 | INFO | pipeline | RAW saved resource=orders rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\orders.json
+2026-10-20 17:13:04,221 | INFO | api_client | Fetched resource=order_items page=1 rows=0 total_so_far=0
+2026-10-20 17:13:04,224 | INFO | pipeline | RAW saved resource=order_items rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\order_items.json
+2026-10-20 17:13:06,309 | INFO | api_client | Fetched resource=payments page=1 rows=0 total_so_far=0
+2026-10-20 17:13:06,323 | INFO | pipeline | RAW saved resource=payments rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\dedd2fe9-8b8d-4b1c-948f-ff568c609bf2\payments.json
+2026-10-20 17:13:06,327 | INFO | pipeline | Ingested source=api dataset=customers rows=100 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,327 | INFO | pipeline | Ingested source=api dataset=products rows=50 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,327 | INFO | pipeline | Ingested source=api dataset=orders rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,328 | INFO | pipeline | Ingested source=api dataset=order_items rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,328 | INFO | pipeline | Ingested source=api dataset=payments rows=0 run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,328 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:06,438 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,207 | INFO | pipeline | [5/8] Nạp Core Database | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,425 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 17:13:07,434 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,509 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 17:13:07,515 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,523 | INFO | load | [UPSERT] table=core.orders incoming=0 inserted=0 updated=0
+2026-10-20 17:13:07,526 | INFO | pipeline | [5/8] dataset=orders input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,536 | INFO | load | [UPSERT] table=core.order_items incoming=0 inserted=0 updated=0
+2026-10-20 17:13:07,538 | INFO | pipeline | [5/8] dataset=order_items input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,546 | INFO | load | [UPSERT] table=core.payments incoming=0 inserted=0 updated=0
+2026-10-20 17:13:07,548 | INFO | pipeline | [5/8] dataset=payments input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] dataset=orders 0 = 0 + 0 OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] dataset=order_items 0 = 0 + 0 OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,548 | INFO | pipeline | [6/8] dataset=payments 0 = 0 + 0 OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,559 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,560 | INFO | pipeline | [7/8] Làm mới Data Mart SKIPPED | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,560 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,572 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2
+2026-10-20 17:13:07,573 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=dedd2fe9-8b8d-4b1c-948f-ff568c609bf2 status=success
+
+Exit code: 0

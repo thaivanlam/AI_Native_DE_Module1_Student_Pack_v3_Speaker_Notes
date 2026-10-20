@@ -1,6 +1,6 @@
 dataset,input,valid,rejected
 customers,100,100,0
 products,50,50,0
-orders,600,600,0
-order_items,1533,1533,0
-payments,536,536,0
+orders,0,0,0
+order_items,0,0,0
+payments,0,0,0

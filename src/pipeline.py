@@ -48,6 +48,8 @@ class _RunLogger(logging.LoggerAdapter):
 
 
 API_RESOURCES = ("customers", "products", "orders", "order_items", "payments")
+MASTER_RESOURCES = ("customers", "products")
+TRANSACTION_RESOURCES = ("orders", "order_items", "payments")
 DATA_FILES = schema_validator.DATA_FILES
 CORE_COLUMN_RENAMES = {"orders": {"status": "order_status"}}
 
@@ -92,7 +94,7 @@ def save_raw(resource: str, rows: list, run_id: str, updated_after: str | None =
     # Exclusive creation makes a RAW payload immutable.
     with target.open("x", encoding="utf-8") as raw_file:
         json.dump(payload, raw_file, ensure_ascii=False, indent=2)
-    log.info("RAW saved resource=%s rows=%d -> %s", resource, len(rows), target)
+    log.info("RAW saved resource=%s rows=%d run_id=%s -> %s", resource, len(rows), run_id, target)
     return target
 
 
@@ -112,29 +114,37 @@ def load_raw_to_core(run_id: str, resources=API_RESOURCES) -> dict:
     return stats
 
 
-def _file_frames(input_dir: Path) -> dict[str, pd.DataFrame]:
-    return {name: read_dataset(Path(input_dir) / filename) for name, filename in DATA_FILES.items()}
+def _file_frames(input_dir: Path, resources=API_RESOURCES) -> dict[str, pd.DataFrame]:
+    """Read only the requested file datasets (master data in hybrid mode)."""
+    return {name: read_dataset(Path(input_dir) / DATA_FILES[name]) for name in resources}
 
 
 def _api_frames(run_id: str, state: dict, resources=API_RESOURCES) -> dict[str, pd.DataFrame]:
     frames = {}
     for name in resources:
         watermark = state.get("api_watermarks", {}).get(name)
-        raw = save_raw(name, fetch_all_pages(name, updated_after=watermark, page_size=100), run_id, watermark)
-        frames[name] = read_dataset(raw)
+        rows = fetch_all_pages(name, updated_after=watermark, page_size=100)
+        raw = save_raw(name, rows, run_id, watermark)
+        # A successful incremental request can contain no new records. Keep an
+        # empty schema for downstream validators; the RAW snapshot stays empty.
+        frames[name] = read_dataset(raw) if rows else pd.DataFrame(columns=schema_validator.REQUIRED[name])
     return frames
 
 
 def _source_frames(input_dir: Path, source: str, run_id: str, state: dict) -> dict[str, pd.DataFrame]:
     if source == "file":
-        return _file_frames(input_dir)
-    if source == "api":
-        return _api_frames(run_id, state)
-    if source == "both":
         frames = _file_frames(input_dir)
-        frames.update(_api_frames(run_id, state, ("orders", "order_items", "payments")))
-        return frames
-    raise ValueError(f"Unsupported source: {source}")
+    elif source == "api":
+        frames = _api_frames(run_id, state)
+    elif source == "both":
+        frames = _file_frames(input_dir, MASTER_RESOURCES)
+        frames.update(_api_frames(run_id, state, TRANSACTION_RESOURCES))
+    else:
+        raise ValueError(f"Unsupported source: {source}")
+    for name, frame in frames.items():
+        dataset_source = "file" if source == "file" or (source == "both" and name in MASTER_RESOURCES) else "api"
+        log.info("Ingested source=%s dataset=%s rows=%d run_id=%s", dataset_source, name, len(frame), run_id)
+    return frames
 
 
 def _split_duplicate_pk(name: str, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -241,6 +251,8 @@ def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_pro
     new_state = {"last_run_id": run_id, "last_successful_at": datetime.now(timezone.utc).isoformat(), "last_source": source, "status": "success", "api_watermarks": dict(state["api_watermarks"]), "processed_file_batches": list(state["processed_file_batches"])}
     if source in {"api", "both"}:
         for name, (valid, _, _) in prepared.items():
+            if source == "both" and name in MASTER_RESOURCES:
+                continue
             if value := _watermark(valid):
                 new_state["api_watermarks"][name] = value
     if source in {"file", "both"} and resolved_input not in new_state["processed_file_batches"]:
