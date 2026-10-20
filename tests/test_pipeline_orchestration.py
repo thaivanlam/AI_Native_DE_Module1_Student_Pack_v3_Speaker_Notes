@@ -202,3 +202,45 @@ def test_hybrid_does_not_advance_api_watermarks_from_master_files(batch, monkeyp
     monkeypatch.setattr(pipeline, "fetch_all_pages", lambda *args, **kwargs: [])
     pipeline.run(input_dir, source="both")
     assert "customers" not in pipeline._read_state()["api_watermarks"]
+
+
+def test_hybrid_skip_keeps_api_running_without_reading_processed_files(batch, monkeypatch):
+    input_dir, events, settings = batch
+    pipeline.run(input_dir)
+    events.clear()
+    monkeypatch.setattr(pipeline, "SETTINGS", dataclasses.replace(settings, raw_dir=settings.root / "raw"))
+    calls = []
+
+    def fetch(name, updated_after=None, page_size=100):
+        calls.append((name, updated_after))
+        return []
+
+    monkeypatch.setattr(pipeline, "fetch_all_pages", fetch)
+    for path in input_dir.iterdir():
+        path.unlink()
+    result = pipeline.run(input_dir, source="both", skip_processed_file=True)
+    assert result["status"] == "success"
+    assert calls == [(name, "2026-06-30T00:00:00Z" if name == "orders" else None)
+                     for name in pipeline.TRANSACTION_RESOURCES]
+    assert all(frame.empty for _, frame in events)
+    assert pipeline._read_state()["processed_file_batches"] == [str(input_dir.resolve())]
+
+
+def test_api_watermark_uses_loaded_rows_and_never_regresses(batch, monkeypatch):
+    input_dir, _, settings = batch
+    monkeypatch.setattr(pipeline, "SETTINGS", dataclasses.replace(settings, raw_dir=settings.root / "raw"))
+
+    def fetch(name, **kwargs):
+        frame = pipeline.read_dataset(input_dir / pipeline.DATA_FILES[name])
+        frame["updated_at"] = "2026-06-29T00:00:00Z"
+        if name == "customers":
+            # This invalid email must not advance the successful-row watermark.
+            frame.loc[frame["customer_id"] == "C2", "updated_at"] = "2026-08-01T00:00:00Z"
+        return frame.to_dict("records")
+
+    monkeypatch.setattr(pipeline, "fetch_all_pages", fetch)
+    pipeline.run(input_dir, source="api", refresh_mart=True)
+    state = pipeline._read_state()
+    assert state["api_watermarks"]["orders"] == "2026-06-30T00:00:00Z"
+    assert state["api_watermarks"]["customers"] == "2026-06-29T00:00:00+00:00"
+    assert state["processed_file_batches"] == []

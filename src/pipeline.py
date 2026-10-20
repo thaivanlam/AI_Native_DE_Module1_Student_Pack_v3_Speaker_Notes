@@ -2,7 +2,9 @@
 import argparse
 import json
 import logging
+import os
 import sys
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -72,6 +74,14 @@ def _read_state() -> dict:
         raise ValueError(f"Invalid state file: {path}")
     state.setdefault("api_watermarks", {})
     state.setdefault("processed_file_batches", [])
+    if not isinstance(state["api_watermarks"], dict):
+        raise ValueError(f"Invalid api_watermarks in state file: {path}")
+    for name, value in state["api_watermarks"].items():
+        if not isinstance(value, str) or pd.isna(pd.to_datetime(value, errors="coerce", utc=True)):
+            raise ValueError(f"Invalid API watermark for {name}: {value!r}")
+    batches = state["processed_file_batches"]
+    if not isinstance(batches, list) or not all(isinstance(item, str) for item in batches):
+        raise ValueError(f"Invalid processed_file_batches in state file: {path}")
     return state
 
 
@@ -79,9 +89,19 @@ def _write_state(state: dict) -> Path:
     """Replace checkpoint atomically; caller invokes this only on success."""
     path = _state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    payload = json.dumps(state, ensure_ascii=False, indent=2) + "\n"
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=f".{path.name}.", suffix=".tmp", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     return path
 
 
@@ -177,12 +197,12 @@ def _write_rejects(run_id: str, name: str, rejected: pd.DataFrame) -> Path | Non
 
 
 def _watermark(df: pd.DataFrame) -> str | None:
+    """Prefer each row's updated_at, falling back to its created_at."""
+    values = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns, UTC]")
     for column in ("updated_at", "created_at"):
         if column in df:
-            values = pd.to_datetime(df[column], errors="coerce", utc=True).dropna()
-            if not values.empty:
-                return values.max().isoformat()
-    return None
+            values = values.fillna(pd.to_datetime(df[column], errors="coerce", utc=True, format="mixed"))
+    return values.max().isoformat() if values.notna().any() else None
 
 
 def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_processed_file=False, *, run_id=None) -> dict:
@@ -192,12 +212,18 @@ def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_pro
     run_log.info("[1/8] Khởi tạo")
     state = _read_state()
     resolved_input = str(input_dir.resolve())
-    if source == "file" and skip_processed_file and resolved_input in state["processed_file_batches"]:
+    skip_file = skip_processed_file and resolved_input in state["processed_file_batches"]
+    if source == "file" and skip_file:
         run_log.info("File batch already processed; SKIPPED | input_dir=%s", resolved_input)
         return {"run_id": run_id, "status": "skipped"}
 
     run_log.info("[2/8] Trích xuất | source=%s", source)
-    frames = _source_frames(input_dir, source, run_id, state)
+    if source == "both" and skip_file:
+        run_log.info("File batch already processed; SKIPPED | input_dir=%s; continuing API", resolved_input)
+        frames = {name: pd.DataFrame(columns=schema_validator.REQUIRED[name]) for name in MASTER_RESOURCES}
+        frames.update(_api_frames(run_id, state, TRANSACTION_RESOURCES))
+    else:
+        frames = _source_frames(input_dir, source, run_id, state)
     run_log.info("[3/8] Chuẩn hóa & Schema")
     normalized = {}
     for name in API_RESOURCES:
@@ -254,7 +280,9 @@ def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_pro
             if source == "both" and name in MASTER_RESOURCES:
                 continue
             if value := _watermark(valid):
-                new_state["api_watermarks"][name] = value
+                previous = new_state["api_watermarks"].get(name)
+                if previous is None or pd.Timestamp(value) > pd.Timestamp(previous):
+                    new_state["api_watermarks"][name] = value
     if source in {"file", "both"} and resolved_input not in new_state["processed_file_batches"]:
         new_state["processed_file_batches"].append(resolved_input)
     _write_state(new_state)

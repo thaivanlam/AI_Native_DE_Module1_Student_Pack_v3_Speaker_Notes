@@ -1,0 +1,230 @@
+B8 / Bai 3: real PostgreSQL + Mock API, no mocked pipeline stages.
+
+STATE BEFORE FAILURE
+{
+  "last_run_id": "dedd2fe9-8b8d-4b1c-948f-ff568c609bf2",
+  "last_successful_at": "2026-10-20T10:13:07.561308+00:00",
+  "last_source": "api",
+  "status": "success",
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
+  "processed_file_batches": [
+    "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
+  ]
+}
+
+
+$ python -m src.pipeline --source file --input-dir D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__
+2026-10-20 17:20:28,249 | INFO | pipeline | [1/8] Khởi tạo | run_id=572118f8-99c7-4b49-961b-8fb910323351
+2026-10-20 17:20:28,254 | INFO | pipeline | [2/8] Trích xuất | source=file | run_id=572118f8-99c7-4b49-961b-8fb910323351
+2026-10-20 17:20:28,254 | INFO | extract | Reading dataset=customers_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__\customers_daily.csv
+2026-10-20 17:20:28,254 | ERROR | extract | Failed to read dataset=customers_daily path=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__\customers_daily.csv | FileNotFoundError: Missing file: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__\customers_daily.csv
+2026-10-20 17:20:28,254 | ERROR | pipeline | [ALERT] Pipeline failed (exit 1) | run_id=572118f8-99c7-4b49-961b-8fb910323351 error_type=FileNotFoundError message=Missing file: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__\customers_daily.csv
+Traceback (most recent call last):
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 301, in main
+    result = run(args.input_dir, args.source, args.refresh_mart, args.skip_processed_file, run_id=run_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 226, in run
+    frames = _source_frames(input_dir, source, run_id, state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 156, in _source_frames
+    frames = _file_frames(input_dir)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\pipeline.py", line 139, in _file_frames
+    return {name: read_dataset(Path(input_dir) / DATA_FILES[name]) for name in resources}
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\extract_files.py", line 56, in read_dataset
+    df = _load(path)
+         ^^^^^^^^^^^
+  File "D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\src\extract_files.py", line 36, in _load
+    raise FileNotFoundError(f"Missing file: {path}")
+FileNotFoundError: Missing file: D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\__checkpoint_missing_batch__\customers_daily.csv
+
+Exit code: 1
+
+STATE AFTER FAILURE
+{
+  "last_run_id": "dedd2fe9-8b8d-4b1c-948f-ff568c609bf2",
+  "last_successful_at": "2026-10-20T10:13:07.561308+00:00",
+  "last_source": "api",
+  "status": "success",
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
+  "processed_file_batches": [
+    "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
+  ]
+}
+
+PASS: failed run exits 1; checkpoint bytes are unchanged.
+
+$ python -m src.pipeline --source both --refresh-mart
+2026-10-20 17:20:29,869 | INFO | pipeline | [1/8] Khởi tạo | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:29,875 | INFO | pipeline | [2/8] Trích xuất | source=both | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:29,876 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 17:20:29,878 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 17:20:29,878 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 17:20:29,878 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 17:20:31,993 | INFO | api_client | Fetched resource=orders page=1 rows=0 total_so_far=0
+2026-10-20 17:20:31,996 | INFO | pipeline | RAW saved resource=orders rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\5a44aa09-972a-42e6-b5f1-7b378d6a1805\orders.json
+2026-10-20 17:20:34,131 | INFO | api_client | Fetched resource=order_items page=1 rows=0 total_so_far=0
+2026-10-20 17:20:34,153 | INFO | pipeline | RAW saved resource=order_items rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\5a44aa09-972a-42e6-b5f1-7b378d6a1805\order_items.json
+2026-10-20 17:20:36,243 | INFO | api_client | Fetched resource=payments page=1 rows=0 total_so_far=0
+2026-10-20 17:20:36,245 | INFO | pipeline | RAW saved resource=payments rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805 -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\5a44aa09-972a-42e6-b5f1-7b378d6a1805\payments.json
+2026-10-20 17:20:36,256 | INFO | pipeline | Ingested source=file dataset=customers rows=100 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,258 | INFO | pipeline | Ingested source=file dataset=products rows=50 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,259 | INFO | pipeline | Ingested source=api dataset=orders rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,259 | INFO | pipeline | Ingested source=api dataset=order_items rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,259 | INFO | pipeline | Ingested source=api dataset=payments rows=0 run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,259 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,378 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,696 | INFO | pipeline | [5/8] Nạp Core Database | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:36,909 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 17:20:36,915 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,021 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 17:20:37,027 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,036 | INFO | load | [UPSERT] table=core.orders incoming=0 inserted=0 updated=0
+2026-10-20 17:20:37,036 | INFO | pipeline | [5/8] dataset=orders input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,060 | INFO | load | [UPSERT] table=core.order_items incoming=0 inserted=0 updated=0
+2026-10-20 17:20:37,064 | INFO | pipeline | [5/8] dataset=order_items input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,090 | INFO | load | [UPSERT] table=core.payments incoming=0 inserted=0 updated=0
+2026-10-20 17:20:37,096 | INFO | pipeline | [5/8] dataset=payments input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,097 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,098 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,099 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,100 | INFO | pipeline | [6/8] dataset=orders 0 = 0 + 0 OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,102 | INFO | pipeline | [6/8] dataset=order_items 0 = 0 + 0 OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,102 | INFO | pipeline | [6/8] dataset=payments 0 = 0 + 0 OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,129 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,977 | INFO | pipeline | [7/8] Làm mới Data Mart OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,977 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,989 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805
+2026-10-20 17:20:37,992 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=5a44aa09-972a-42e6-b5f1-7b378d6a1805 status=success
+
+Exit code: 0
+
+STATE AFTER SUCCESS
+{
+  "last_run_id": "5a44aa09-972a-42e6-b5f1-7b378d6a1805",
+  "last_successful_at": "2026-10-20T10:20:37.977734+00:00",
+  "last_source": "both",
+  "status": "success",
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
+  "processed_file_batches": [
+    "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
+  ]
+}
+
+PASS: Core, reconciliation, report and mart complete before checkpoint changes.
+
+$ python -m src.pipeline --source api --refresh-mart
+2026-10-20 17:20:39,445 | INFO | pipeline | [1/8] Khởi tạo | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:39,456 | INFO | pipeline | [2/8] Trích xuất | source=api | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:41,516 | INFO | api_client | Fetched resource=customers page=1 rows=0 total_so_far=0
+2026-10-20 17:20:41,521 | INFO | pipeline | RAW saved resource=customers rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\99e774ef-63b1-4b87-b89b-17550da1aeae\customers.json
+2026-10-20 17:20:43,667 | INFO | api_client | Fetched resource=products page=1 rows=0 total_so_far=0
+2026-10-20 17:20:43,682 | INFO | pipeline | RAW saved resource=products rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\99e774ef-63b1-4b87-b89b-17550da1aeae\products.json
+2026-10-20 17:20:45,908 | INFO | api_client | Fetched resource=orders page=1 rows=0 total_so_far=0
+2026-10-20 17:20:45,937 | INFO | pipeline | RAW saved resource=orders rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\99e774ef-63b1-4b87-b89b-17550da1aeae\orders.json
+2026-10-20 17:20:48,021 | INFO | api_client | Fetched resource=order_items page=1 rows=0 total_so_far=0
+2026-10-20 17:20:48,023 | INFO | pipeline | RAW saved resource=order_items rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\99e774ef-63b1-4b87-b89b-17550da1aeae\order_items.json
+2026-10-20 17:20:50,087 | INFO | api_client | Fetched resource=payments page=1 rows=0 total_so_far=0
+2026-10-20 17:20:50,094 | INFO | pipeline | RAW saved resource=payments rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae -> D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\raw\99e774ef-63b1-4b87-b89b-17550da1aeae\payments.json
+2026-10-20 17:20:50,103 | INFO | pipeline | Ingested source=api dataset=customers rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,104 | INFO | pipeline | Ingested source=api dataset=products rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,105 | INFO | pipeline | Ingested source=api dataset=orders rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,105 | INFO | pipeline | Ingested source=api dataset=order_items rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,106 | INFO | pipeline | Ingested source=api dataset=payments rows=0 run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,107 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,135 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,655 | INFO | pipeline | [5/8] Nạp Core Database | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,949 | INFO | load | [UPSERT] table=core.customers incoming=0 inserted=0 updated=0
+2026-10-20 17:20:50,951 | INFO | pipeline | [5/8] dataset=customers input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:50,964 | INFO | load | [UPSERT] table=core.products incoming=0 inserted=0 updated=0
+2026-10-20 17:20:50,985 | INFO | pipeline | [5/8] dataset=products input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,026 | INFO | load | [UPSERT] table=core.orders incoming=0 inserted=0 updated=0
+2026-10-20 17:20:51,028 | INFO | pipeline | [5/8] dataset=orders input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,039 | INFO | load | [UPSERT] table=core.order_items incoming=0 inserted=0 updated=0
+2026-10-20 17:20:51,053 | INFO | pipeline | [5/8] dataset=order_items input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,064 | INFO | load | [UPSERT] table=core.payments incoming=0 inserted=0 updated=0
+2026-10-20 17:20:51,065 | INFO | pipeline | [5/8] dataset=payments input=0 valid=0 reject=0 inserted=0 updated=0 | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] dataset=customers 0 = 0 + 0 OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] dataset=products 0 = 0 + 0 OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] dataset=orders 0 = 0 + 0 OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] dataset=order_items 0 = 0 + 0 OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,066 | INFO | pipeline | [6/8] dataset=payments 0 = 0 + 0 OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,091 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,851 | INFO | pipeline | [7/8] Làm mới Data Mart OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,851 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,947 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae
+2026-10-20 17:20:51,966 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=99e774ef-63b1-4b87-b89b-17550da1aeae status=success
+
+Exit code: 0
+
+STATE AFTER API RESUME
+{
+  "last_run_id": "99e774ef-63b1-4b87-b89b-17550da1aeae",
+  "last_successful_at": "2026-10-20T10:20:51.851057+00:00",
+  "last_source": "api",
+  "status": "success",
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
+  "processed_file_batches": [
+    "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
+  ]
+}
+
+PASS: orders resumed with updated_after=2026-07-01T18:44:00+00:00; fetched=0
+PASS: order_items resumed with updated_after=2026-07-01T15:59:00+00:00; fetched=0
+PASS: payments resumed with updated_after=2026-07-01T20:22:00+00:00; fetched=0
+PASS: customers resumed with updated_after=2026-07-01T02:59:00+00:00; fetched=0
+PASS: products resumed with updated_after=2026-07-01T03:40:00+00:00; fetched=0
+Empty increments retain their previous watermark; only loaded valid rows can advance it.
+
+$ python -m src.pipeline --source file --skip-processed-file
+2026-10-20 17:20:54,498 | INFO | pipeline | [1/8] Khởi tạo | run_id=b45b2fb7-0e07-402e-a955-d2796b7595bb
+2026-10-20 17:20:54,502 | INFO | pipeline | File batch already processed; SKIPPED | input_dir=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01 | run_id=b45b2fb7-0e07-402e-a955-d2796b7595bb
+2026-10-20 17:20:54,502 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=b45b2fb7-0e07-402e-a955-d2796b7595bb status=skipped
+
+Exit code: 0
+
+STATE AFTER FILE SKIP
+{
+  "last_run_id": "99e774ef-63b1-4b87-b89b-17550da1aeae",
+  "last_successful_at": "2026-10-20T10:20:51.851057+00:00",
+  "last_source": "api",
+  "status": "success",
+  "api_watermarks": {
+    "orders": "2026-07-01T18:44:00+00:00",
+    "order_items": "2026-07-01T15:59:00+00:00",
+    "payments": "2026-07-01T20:22:00+00:00",
+    "customers": "2026-07-01T02:59:00+00:00",
+    "products": "2026-07-01T03:40:00+00:00"
+  },
+  "processed_file_batches": [
+    "D:\\Data_Engineer\\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\\data\\incremental\\day_2026-07-01"
+  ]
+}
+
+PASS: processed file batch skipped, exit 0, checkpoint unchanged.
