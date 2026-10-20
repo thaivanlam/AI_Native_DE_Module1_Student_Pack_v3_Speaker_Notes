@@ -30,11 +30,24 @@ def split_cross_table_invalid(name, df, reference_ids=None, order_dates=None):
     Args:
         name: tên bảng.
         df: DataFrame cần kiểm tra.
-        reference_ids: dict {bảng tham chiếu: set id hợp lệ}.
-        order_dates: dict {order_id: order_date} cho chronology check.
+        reference_ids: dict {bảng tham chiếu: set id hợp lệ}; None tự nạp
+            seed và dữ liệu ngày. Dict rỗng nghĩa là không có khóa hợp lệ.
+        order_dates: dict {order_id: order_date}; None tự nạp ngày đặt hàng.
+
+    Giữ nguyên dữ liệu, thứ tự và index; nhiều lỗi nối bằng '|'.
+    Giá trị thiếu hoặc ngày không parse được thuộc tầng schema.
     """
-    reference_ids = reference_ids or {}
-    order_dates = order_dates or {}
+    if reference_ids is None:
+        reference_ids = load_references()
+    if order_dates is None:
+        order_dates = load_order_dates() if name == 'payments' else {}
+    reference_ids = {
+        table: {str(value).strip() for value in values
+                if not schema_validator.is_missing(value)}
+        for table, values in reference_ids.items()
+    }
+    order_dates = {str(key).strip(): value for key, value in order_dates.items()
+                   if not schema_validator.is_missing(key)}
     errors = [[] for _ in range(len(df))]
 
     # 1. Foreign Key checks
@@ -51,9 +64,10 @@ def split_cross_table_invalid(name, df, reference_ids=None, order_dates=None):
     # 2. Chronology: payment_date >= order_date, vi phạm nếu payment trước order
     if name == 'payments' and {'payment_date', 'order_id'} <= set(df.columns):
         payment_dates = pd.to_datetime(df['payment_date'], errors='coerce',
-                                       format='ISO8601')
+                                       format='ISO8601', utc=True)
         order_dates_series = pd.to_datetime(
-            df['order_id'].map(order_dates), errors='coerce', format='ISO8601')
+            df['order_id'].astype('string').str.strip().map(order_dates),
+            errors='coerce', format='ISO8601', utc=True)
         for i in range(len(df)):
             if (pd.notna(payment_dates.iloc[i]) and pd.notna(order_dates_series.iloc[i])
                     and payment_dates.iloc[i] < order_dates_series.iloc[i]):
@@ -99,6 +113,7 @@ def run(evidence_file=schema_validator.EVIDENCE_FILE.parent / '07-integrity.txt'
         df = schema_validator.load_dataset(name)
         valid_df, rejected_df = split_cross_table_invalid(
             name, df, reference_ids, order_dates)
+        assert len(df) == len(valid_df) + len(rejected_df), name
         lines.append(f'{name}: valid={len(valid_df)} rejected={len(rejected_df)}')
         for _, row in rejected_df.iterrows():
             pk = row[schema_validator.ID_COLUMN[name]]
