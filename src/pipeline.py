@@ -1,6 +1,7 @@
 """Command-line orchestration for the daily data pipeline."""
 import argparse
 import json
+import logging
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -12,8 +13,8 @@ DEFAULT_INPUT_DIR = Path("data/incremental/day_2026-07-01")
 def _build_parser() -> argparse.ArgumentParser:
     """Build the CLI without importing optional ETL/database dependencies."""
     parser = argparse.ArgumentParser(description="Điều phối daily data pipeline")
-    parser.add_argument("--input-dir", default=str(DEFAULT_INPUT_DIR), help="Thư mục dữ liệu file theo ngày")
-    parser.add_argument("--source", choices=["file", "api", "both"], default="file", help="Nguồn dữ liệu")
+    parser.add_argument("--input-dir", default=DEFAULT_INPUT_DIR.as_posix(), help=f"Thư mục dữ liệu file theo ngày (mặc định: {DEFAULT_INPUT_DIR.as_posix()})")
+    parser.add_argument("--source", choices=["file", "api", "both"], default="file", help="Nguồn dữ liệu (mặc định: file)")
     parser.add_argument("--refresh-mart", action="store_true", help="Làm mới Sales Data Mart sau khi nạp Core")
     parser.add_argument("--skip-processed-file", action="store_true", help="Bỏ qua file batch đã xử lý thành công")
     return parser
@@ -37,6 +38,15 @@ from src.transform import normalize
 from src.validators import business_validator, integrity_validator, schema_validator
 
 log = get_logger("pipeline")
+
+
+class _RunLogger(logging.LoggerAdapter):
+    """Attach the same run identifier to every orchestration message."""
+
+    def process(self, msg, kwargs):
+        return f"{msg} | run_id={self.extra['run_id']}", kwargs
+
+
 API_RESOURCES = ("customers", "products", "orders", "order_items", "payments")
 DATA_FILES = schema_validator.DATA_FILES
 CORE_COLUMN_RENAMES = {"orders": {"status": "order_status"}}
@@ -165,26 +175,27 @@ def _watermark(df: pd.DataFrame) -> str | None:
     return None
 
 
-def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_processed_file=False) -> dict:
+def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_processed_file=False, *, run_id=None) -> dict:
     """Run the eight ordered stages; errors propagate so the entrypoint exits 1."""
-    input_dir, run_id = Path(input_dir), new_run_id()
-    log.info("[1/8] Khởi tạo | run_id=%s", run_id)
+    input_dir, run_id = Path(input_dir), run_id or new_run_id()
+    run_log = _RunLogger(log, {"run_id": run_id})
+    run_log.info("[1/8] Khởi tạo")
     state = _read_state()
     resolved_input = str(input_dir.resolve())
     if source == "file" and skip_processed_file and resolved_input in state["processed_file_batches"]:
-        log.info("File batch already processed; SKIPPED | input_dir=%s", resolved_input)
+        run_log.info("File batch already processed; SKIPPED | input_dir=%s", resolved_input)
         return {"run_id": run_id, "status": "skipped"}
 
-    log.info("[2/8] Trích xuất | run_id=%s source=%s", run_id, source)
+    run_log.info("[2/8] Trích xuất | source=%s", source)
     frames = _source_frames(input_dir, source, run_id, state)
-    log.info("[3/8] Chuẩn hóa & Schema | run_id=%s", run_id)
+    run_log.info("[3/8] Chuẩn hóa & Schema")
     normalized = {}
     for name in API_RESOURCES:
         frame = normalize(frames[name]).rename(columns=CORE_COLUMN_RENAMES.get(name, {}))
         schema_validator.validate_schema(name, frame.rename(columns={"order_status": "status"}) if name == "orders" else frame)
         normalized[name] = frame
 
-    log.info("[4/8] Kiểm tra Chất lượng | run_id=%s", run_id)
+    run_log.info("[4/8] Kiểm tra Chất lượng")
     references, order_dates = _references_for(frames)
     prepared, report_rows = {}, []
     for name in API_RESOURCES:
@@ -199,30 +210,34 @@ def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_pro
         assert len(original) == len(valid) + len(rejected), f"Invariant violated for {name}"
         prepared[name] = (valid, rejected, len(original))
 
-    log.info("[5/8] Nạp Core Database | run_id=%s", run_id)
+    run_log.info("[5/8] Nạp Core Database")
     load_stats = {}
     for name in API_RESOURCES:
         valid, rejected, incoming = prepared[name]
         reject_file = _write_rejects(run_id, name, rejected)
         load_stats[name] = upsert_dataframe(name, valid)
         stats = load_stats[name]
-        log.info("[5/8] %s input=%d valid=%d reject=%d inserted=%d updated=%d%s", name, incoming, len(valid), len(rejected), stats["inserted"], stats["updated"], f" reject_file={reject_file}" if reject_file else "")
+        run_log.info("[5/8] dataset=%s input=%d valid=%d reject=%d inserted=%d updated=%d%s", name, incoming, len(valid), len(rejected), stats["inserted"], stats["updated"], f" reject_file={reject_file}" if reject_file else "")
         report_rows.append({"dataset": name, "input": incoming, "valid": len(valid), "rejected": len(rejected)})
 
-    log.info("[6/8] Đối soát & Báo cáo | run_id=%s", run_id)
+    run_log.info("[6/8] Đối soát & Báo cáo")
     for row in report_rows:
-        assert row["input"] == row["valid"] + row["rejected"]
+        assert row["input"] == row["valid"] + row["rejected"], (
+            f"Invariant violated for {row['dataset']}: "
+            f"{row['input']} != {row['valid']} + {row['rejected']}"
+        )
+        run_log.info("[6/8] dataset=%s %d = %d + %d OK", row["dataset"], row["input"], row["valid"], row["rejected"])
     build_report(report_rows, run_id=run_id, out_dir=SETTINGS.report_dir)
 
-    log.info("[7/8] Làm mới Data Mart | run_id=%s", run_id)
+    run_log.info("[7/8] Làm mới Data Mart")
     if refresh_mart:
         from src.refresh_mart import refresh_mart
         refresh_mart()
-        log.info("[7/8] Làm mới Data Mart OK")
+        run_log.info("[7/8] Làm mới Data Mart OK")
     else:
-        log.info("[7/8] Làm mới Data Mart SKIPPED")
+        run_log.info("[7/8] Làm mới Data Mart SKIPPED")
 
-    log.info("[8/8] Cập nhật Checkpoint | run_id=%s", run_id)
+    run_log.info("[8/8] Cập nhật Checkpoint")
     new_state = {"last_run_id": run_id, "last_successful_at": datetime.now(timezone.utc).isoformat(), "last_source": source, "status": "success", "api_watermarks": dict(state["api_watermarks"]), "processed_file_batches": list(state["processed_file_batches"])}
     if source in {"api", "both"}:
         for name, (valid, _, _) in prepared.items():
@@ -231,7 +246,7 @@ def run(input_dir=DEFAULT_INPUT_DIR, source="file", refresh_mart=False, skip_pro
     if source in {"file", "both"} and resolved_input not in new_state["processed_file_batches"]:
         new_state["processed_file_batches"].append(resolved_input)
     _write_state(new_state)
-    log.info("[8/8] Cập nhật Checkpoint State OK | run_id=%s", run_id)
+    run_log.info("[8/8] Cập nhật Checkpoint State OK")
     return {"run_id": run_id, "status": "success", "datasets": report_rows, "load_stats": load_stats}
 
 
@@ -241,12 +256,13 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 def main(argv=None) -> int:
     args = parse_args(argv)
+    run_id = new_run_id()
     try:
-        run(args.input_dir, args.source, args.refresh_mart, args.skip_processed_file)
+        result = run(args.input_dir, args.source, args.refresh_mart, args.skip_processed_file, run_id=run_id)
     except Exception as exc:
-        log.exception("[ALERT] Pipeline failed | error_type=%s message=%s", type(exc).__name__, str(exc).splitlines()[0])
+        log.exception("[ALERT] Pipeline failed (exit 1) | run_id=%s error_type=%s message=%s", run_id, type(exc).__name__, str(exc).splitlines()[0] if str(exc) else "")
         return 1
-    log.info("Pipeline hoàn thành (exit 0)")
+    log.info("Pipeline hoàn thành (exit 0) | run_id=%s status=%s", run_id, result["status"])
     return 0
 
 

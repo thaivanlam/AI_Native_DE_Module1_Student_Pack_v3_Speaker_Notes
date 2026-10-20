@@ -6,9 +6,10 @@ usage: pipeline.py [-h] [--input-dir INPUT_DIR] [--source {file,api,both}]
 options:
   -h, --help            show this help message and exit
   --input-dir INPUT_DIR
-                        Thư mục dữ liệu file theo ngày
+                        Thư mục dữ liệu file theo ngày (mặc định:
+                        data/incremental/day_2026-07-01)
   --source {file,api,both}
-                        Nguồn dữ liệu
+                        Nguồn dữ liệu (mặc định: file)
   --refresh-mart        Làm mới Sales Data Mart sau khi nạp Core
   --skip-processed-file
                         Bỏ qua file batch đã xử lý thành công

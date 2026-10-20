@@ -1,0 +1,40 @@
+Command: python -m src.pipeline --source file --refresh-mart
+
+2026-10-20 16:37:52,584 | INFO | pipeline | [1/8] Khởi tạo | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,585 | INFO | pipeline | [2/8] Trích xuất | source=file | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,585 | INFO | extract | Reading dataset=customers_daily path=data\incremental\day_2026-07-01\customers_daily.csv
+2026-10-20 16:37:52,587 | INFO | extract | Loaded dataset=customers_daily rows=100 cols=10
+2026-10-20 16:37:52,587 | INFO | extract | Reading dataset=products_daily path=data\incremental\day_2026-07-01\products_daily.csv
+2026-10-20 16:37:52,589 | INFO | extract | Loaded dataset=products_daily rows=50 cols=9
+2026-10-20 16:37:52,589 | INFO | extract | Reading dataset=orders_daily path=data\incremental\day_2026-07-01\orders_daily.csv
+2026-10-20 16:37:52,592 | INFO | extract | Loaded dataset=orders_daily rows=600 cols=10
+2026-10-20 16:37:52,592 | INFO | extract | Reading dataset=order_items_daily path=data\incremental\day_2026-07-01\order_items_daily.csv
+2026-10-20 16:37:52,596 | INFO | extract | Loaded dataset=order_items_daily rows=1533 cols=9
+2026-10-20 16:37:52,598 | INFO | extract | Reading dataset=payments_daily path=data\incremental\day_2026-07-01\payments_daily.json
+2026-10-20 16:37:52,600 | INFO | extract | Loaded dataset=payments_daily rows=536 cols=9
+2026-10-20 16:37:52,600 | INFO | pipeline | [3/8] Chuẩn hóa & Schema | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,630 | INFO | pipeline | [4/8] Kiểm tra Chất lượng | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,732 | INFO | pipeline | [5/8] Nạp Core Database | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,797 | INFO | load | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 16:37:52,797 | INFO | pipeline | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,862 | INFO | load | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 16:37:52,863 | INFO | pipeline | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:52,901 | INFO | load | [UPSERT] table=core.orders incoming=600 inserted=0 updated=600
+2026-10-20 16:37:52,901 | INFO | pipeline | [5/8] dataset=orders input=600 valid=600 reject=0 inserted=0 updated=600 | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,080 | INFO | load | [UPSERT] table=core.order_items incoming=1533 inserted=0 updated=1533
+2026-10-20 16:37:53,084 | INFO | pipeline | [5/8] dataset=order_items input=1533 valid=1533 reject=0 inserted=0 updated=1533 | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,160 | INFO | load | [UPSERT] table=core.payments incoming=536 inserted=0 updated=536
+2026-10-20 16:37:53,164 | INFO | pipeline | [5/8] dataset=payments input=536 valid=536 reject=0 inserted=0 updated=536 | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] Đối soát & Báo cáo | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] dataset=products 50 = 50 + 0 OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] dataset=orders 600 = 600 + 0 OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] dataset=order_items 1533 = 1533 + 0 OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,165 | INFO | pipeline | [6/8] dataset=payments 536 = 536 + 0 OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,169 | INFO | pipeline | [7/8] Làm mới Data Mart | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,847 | INFO | pipeline | [7/8] Làm mới Data Mart OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,847 | INFO | pipeline | [8/8] Cập nhật Checkpoint | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,847 | INFO | pipeline | [8/8] Cập nhật Checkpoint State OK | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35
+2026-10-20 16:37:53,847 | INFO | pipeline | Pipeline hoàn thành (exit 0) | run_id=e803e5d8-406c-497a-a166-1ae32e3d1f35 status=success
+
+Exit code: 0
