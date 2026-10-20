@@ -23,6 +23,7 @@ htmlcov/
 # ---------- Virtual environments ----------
 .venv/
 .test-deps/
+.test-deps312/
 venv/
 env/
 

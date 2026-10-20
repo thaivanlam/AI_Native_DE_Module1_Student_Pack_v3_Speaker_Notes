@@ -1,10 +1,10 @@
 == Data Quality Report & Invariant — D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\dirty\day_2026-07-02 ==
-customers: 40 = 38 + 2 OK
+customers: 40 = 37 + 3 OK
 products: 30 = 28 + 2 OK
 orders: 100 = 93 + 7 OK
 order_items: 220 = 206 + 14 OK
 payments: 90 = 86 + 4 OK
-TOTAL: 480 = 451 + 29 OK
+TOTAL: 480 = 450 + 30 OK
 INVARIANT Input = Valid + Rejected: PASS (assert passed)
 report_csv=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\reports\data_quality_report.csv
 report_json=D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\reports\data_quality_summary.json

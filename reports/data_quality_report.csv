@@ -1,5 +1,5 @@
 dataset,input,valid,rejected
-customers,40,38,2
+customers,40,37,3
 products,30,28,2
 orders,100,93,7
 order_items,220,206,14

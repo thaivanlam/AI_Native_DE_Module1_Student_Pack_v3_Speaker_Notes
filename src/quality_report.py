@@ -28,7 +28,12 @@ def collect_stats():
         df = schema_validator.load_dataset(name)
         schema_validator.validate_schema(name, df)  # Tầng 1: Schema (abort nếu thiếu cột)
 
-        valid_df, rejected_b = business_validator.split_valid_invalid(name, df)  # Tầng 2: Business
+        scores = schema_validator.score_rows(name, df)
+        # Dùng vị trí để giữ đúng từng dòng ngay cả khi index bị trùng.
+        complete = scores['errors'].map(lambda errors: not errors).to_numpy(dtype=bool)
+        schema_valid = df.iloc[complete]
+        rejected_schema = int((~complete).sum())
+        valid_df, rejected_b = business_validator.split_valid_invalid(name, schema_valid)
 
         valid_df, rejected_i = integrity_validator.split_cross_table_invalid(  # Tầng 3: Integrity
             name, valid_df, reference_ids, order_dates)
@@ -37,7 +42,7 @@ def collect_stats():
             'dataset': name,
             'input': len(df),
             'valid': len(valid_df),
-            'rejected': len(rejected_b) + len(rejected_i),
+            'rejected': rejected_schema + len(rejected_b) + len(rejected_i),
         }
         assert row['input'] == row['valid'] + row['rejected'], (
             f"Invariant violated cho {name}: "
@@ -48,6 +53,7 @@ def collect_stats():
 
 def build_report(stats, run_id=None, out_dir='reports'):
     """Lưu báo cáo CSV + JSON và kiểm tra bất biến Input = Valid + Rejected."""
+    stats = list(stats)
     out_path = Path(out_dir)
     if not out_path.is_absolute():
         out_path = schema_validator.BASE_DIR / out_path
@@ -59,13 +65,13 @@ def build_report(stats, run_id=None, out_dir='reports'):
             f"Invariant violated cho {row['dataset']}: "
             f"{row['input']} != {row['valid']} + {row['rejected']}")
 
-    csv_file = out_path / 'data_quality_report.csv'
-    df.to_csv(csv_file, index=False)
-
     total = {key: int(df[key].sum()) for key in ('input', 'valid', 'rejected')}
     assert total['input'] == total['valid'] + total['rejected'], (
         f"Invariant violated tổng thể: {total['input']} != "
         f"{total['valid']} + {total['rejected']}")
+
+    csv_file = out_path / 'data_quality_report.csv'
+    df.to_csv(csv_file, index=False)
 
     summary = {
         'run_id': run_id or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
