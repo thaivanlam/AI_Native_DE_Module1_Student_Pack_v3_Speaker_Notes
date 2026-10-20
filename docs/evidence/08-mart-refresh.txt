@@ -1,0 +1,106 @@
+2026-10-20 17:33:31,068 | mart_demo | INFO | Real PostgreSQL demo database=b8_mart_demo_3c753cfad610; configured source database is read-only
+2026-10-20 17:33:31,244 | mart_demo | INFO | Baseline core.categories rows=20 (daily orders excluded)
+2026-10-20 17:33:31,294 | mart_demo | INFO | Baseline core.customers rows=1050 (daily orders excluded)
+2026-10-20 17:33:31,322 | mart_demo | INFO | Baseline core.products rows=520 (daily orders excluded)
+2026-10-20 17:33:31,371 | mart_demo | INFO | Baseline core.order_status rows=5 (daily orders excluded)
+2026-10-20 17:33:31,618 | mart_demo | INFO | Baseline core.orders rows=5000 (daily orders excluded)
+2026-10-20 17:33:32,187 | mart_demo | INFO | Baseline core.order_items rows=12717 (daily orders excluded)
+2026-10-20 17:33:32,370 | mart_demo | INFO | Baseline core.payments rows=4517 (daily orders excluded)
+2026-10-20 17:33:33,224 | mart_demo | INFO | Loaded legacy Buoi 4 mart (revenue column, no net_amount)
+2026-10-20 17:33:33,231 | mart_demo | INFO | INITIAL BASELINE REFRESH
+2026-10-20 17:33:33,260 | refresh_mart | INFO | KPI before={'total_revenue': Decimal('61706432000.00'), 'order_count': 5000, 'completed_orders': 3880, 'total_items_sold': 16659}
+2026-10-20 17:33:33,261 | refresh_mart | INFO | Executing mart refresh SQL: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\sql\solutions\12_load_data_mart.sql
+2026-10-20 17:33:33,632 | refresh_mart | INFO | Mart refresh committed | KPI after={'total_revenue': Decimal('61706432000.00'), 'order_count': 5000, 'completed_orders': 3880, 'total_items_sold': 16659}
+2026-10-20 17:33:33,638 | refresh_mart | INFO | KPI total_revenue before=61706432000.00 after=61706432000.00 diff=0.00
+2026-10-20 17:33:33,638 | refresh_mart | INFO | KPI order_count before=5000 after=5000 diff=0
+2026-10-20 17:33:33,638 | refresh_mart | INFO | KPI completed_orders before=3880 after=3880 diff=0
+2026-10-20 17:33:33,639 | refresh_mart | INFO | KPI total_items_sold before=16659 after=16659 diff=0
+2026-10-20 17:33:33,639 | refresh_mart | INFO | KPI comparison saved: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\docs\kpi_comparison.csv
+2026-10-20 17:33:33,639 | mart_demo | INFO | INCREMENTAL CLI: --source file --input-dir D:\Data_Engineer\AI_Native_DE_Module1_Student_Pack_v3_Speaker_Notes\data\incremental\day_2026-07-01 --refresh-mart
+2026-10-20 17:33:33,644 | pipeline | INFO | [1/8] Khởi tạo | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,653 | pipeline | INFO | [2/8] Trích xuất | source=file | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | Ingested source=file dataset=customers rows=100 run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | Ingested source=file dataset=products rows=50 run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | Ingested source=file dataset=orders rows=600 run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | Ingested source=file dataset=order_items rows=1533 run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | Ingested source=file dataset=payments rows=536 run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,735 | pipeline | INFO | [3/8] Chuẩn hóa & Schema | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:33,877 | pipeline | INFO | [4/8] Kiểm tra Chất lượng | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:34,701 | pipeline | INFO | [5/8] Nạp Core Database | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:34,838 | load | INFO | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 17:33:34,886 | pipeline | INFO | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,025 | load | INFO | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 17:33:35,028 | pipeline | INFO | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,319 | load | INFO | [UPSERT] table=core.orders incoming=600 inserted=600 updated=0
+2026-10-20 17:33:35,326 | pipeline | INFO | [5/8] dataset=orders input=600 valid=600 reject=0 inserted=600 updated=0 | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,796 | load | INFO | [UPSERT] table=core.order_items incoming=1533 inserted=1533 updated=0
+2026-10-20 17:33:35,800 | pipeline | INFO | [5/8] dataset=order_items input=1533 valid=1533 reject=0 inserted=1533 updated=0 | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,947 | load | INFO | [UPSERT] table=core.payments incoming=536 inserted=536 updated=0
+2026-10-20 17:33:35,949 | pipeline | INFO | [5/8] dataset=payments input=536 valid=536 reject=0 inserted=536 updated=0 | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,949 | pipeline | INFO | [6/8] Đối soát & Báo cáo | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,949 | pipeline | INFO | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,949 | pipeline | INFO | [6/8] dataset=products 50 = 50 + 0 OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,950 | pipeline | INFO | [6/8] dataset=orders 600 = 600 + 0 OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,950 | pipeline | INFO | [6/8] dataset=order_items 1533 = 1533 + 0 OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,950 | pipeline | INFO | [6/8] dataset=payments 536 = 536 + 0 OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,958 | pipeline | INFO | [7/8] Làm mới Data Mart | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:35,980 | refresh_mart | INFO | KPI before={'total_revenue': Decimal('61706432000.00'), 'order_count': 5000, 'completed_orders': 3880, 'total_items_sold': 16659}
+2026-10-20 17:33:35,980 | refresh_mart | INFO | Executing mart refresh SQL: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\sql\solutions\12_load_data_mart.sql
+2026-10-20 17:33:36,255 | refresh_mart | INFO | Mart refresh committed | KPI after={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 17:33:36,259 | refresh_mart | INFO | KPI total_revenue before=61706432000.00 after=68932835500.00 diff=7226403500.00
+2026-10-20 17:33:36,260 | refresh_mart | INFO | KPI order_count before=5000 after=5600 diff=600
+2026-10-20 17:33:36,260 | refresh_mart | INFO | KPI completed_orders before=3880 after=4241 diff=361
+2026-10-20 17:33:36,261 | refresh_mart | INFO | KPI total_items_sold before=16659 after=18578 diff=1919
+2026-10-20 17:33:36,261 | refresh_mart | INFO | KPI comparison saved: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\docs\kpi_comparison.csv
+2026-10-20 17:33:36,261 | pipeline | INFO | [7/8] Làm mới Data Mart OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:36,263 | pipeline | INFO | [8/8] Cập nhật Checkpoint | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:36,274 | pipeline | INFO | [8/8] Cập nhật Checkpoint State OK | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0
+2026-10-20 17:33:36,278 | pipeline | INFO | Pipeline hoàn thành (exit 0) | run_id=bec2224c-de43-4981-8044-11d1b0a81fe0 status=success
+2026-10-20 17:33:36,301 | mart_demo | INFO | Core batch reconciliation total_revenue expected_diff=7226403500.00 actual_diff=7226403500.00 OK
+2026-10-20 17:33:36,301 | mart_demo | INFO | Core batch reconciliation order_count expected_diff=600 actual_diff=600 OK
+2026-10-20 17:33:36,301 | mart_demo | INFO | Core batch reconciliation completed_orders expected_diff=361 actual_diff=361 OK
+2026-10-20 17:33:36,301 | mart_demo | INFO | Core batch reconciliation total_items_sold expected_diff=1919 actual_diff=1919 OK
+2026-10-20 17:33:36,301 | mart_demo | INFO | Calendar=(datetime.date(2025, 1, 1), datetime.date(2027, 12, 31), 1095); duplicate facts=0; net_amount/revenue mismatches=0
+2026-10-20 17:33:36,301 | mart_demo | INFO | REPLAY SAME BATCH: assert zero KPI changes
+2026-10-20 17:33:36,304 | pipeline | INFO | [1/8] Khởi tạo | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,307 | pipeline | INFO | [2/8] Trích xuất | source=file | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,349 | pipeline | INFO | Ingested source=file dataset=customers rows=100 run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,349 | pipeline | INFO | Ingested source=file dataset=products rows=50 run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,349 | pipeline | INFO | Ingested source=file dataset=orders rows=600 run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,349 | pipeline | INFO | Ingested source=file dataset=order_items rows=1533 run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,350 | pipeline | INFO | Ingested source=file dataset=payments rows=536 run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,350 | pipeline | INFO | [3/8] Chuẩn hóa & Schema | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:36,599 | pipeline | INFO | [4/8] Kiểm tra Chất lượng | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:37,608 | pipeline | INFO | [5/8] Nạp Core Database | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:37,687 | load | INFO | [UPSERT] table=core.customers incoming=100 inserted=0 updated=100
+2026-10-20 17:33:37,692 | pipeline | INFO | [5/8] dataset=customers input=100 valid=100 reject=0 inserted=0 updated=100 | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:37,757 | load | INFO | [UPSERT] table=core.products incoming=50 inserted=0 updated=50
+2026-10-20 17:33:37,760 | pipeline | INFO | [5/8] dataset=products input=50 valid=50 reject=0 inserted=0 updated=50 | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,099 | load | INFO | [UPSERT] table=core.orders incoming=600 inserted=0 updated=600
+2026-10-20 17:33:38,103 | pipeline | INFO | [5/8] dataset=orders input=600 valid=600 reject=0 inserted=0 updated=600 | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,531 | load | INFO | [UPSERT] table=core.order_items incoming=1533 inserted=0 updated=1533
+2026-10-20 17:33:38,538 | pipeline | INFO | [5/8] dataset=order_items input=1533 valid=1533 reject=0 inserted=0 updated=1533 | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,878 | load | INFO | [UPSERT] table=core.payments incoming=536 inserted=0 updated=536
+2026-10-20 17:33:38,882 | pipeline | INFO | [5/8] dataset=payments input=536 valid=536 reject=0 inserted=0 updated=536 | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,883 | pipeline | INFO | [6/8] Đối soát & Báo cáo | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,883 | pipeline | INFO | [6/8] dataset=customers 100 = 100 + 0 OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,883 | pipeline | INFO | [6/8] dataset=products 50 = 50 + 0 OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,883 | pipeline | INFO | [6/8] dataset=orders 600 = 600 + 0 OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,883 | pipeline | INFO | [6/8] dataset=order_items 1533 = 1533 + 0 OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,884 | pipeline | INFO | [6/8] dataset=payments 536 = 536 + 0 OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,893 | pipeline | INFO | [7/8] Làm mới Data Mart | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:38,924 | refresh_mart | INFO | KPI before={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 17:33:38,924 | refresh_mart | INFO | Executing mart refresh SQL: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\sql\solutions\12_load_data_mart.sql
+2026-10-20 17:33:39,089 | refresh_mart | INFO | Mart refresh committed | KPI after={'total_revenue': Decimal('68932835500.00'), 'order_count': 5600, 'completed_orders': 4241, 'total_items_sold': 18578}
+2026-10-20 17:33:39,095 | refresh_mart | INFO | KPI total_revenue before=68932835500.00 after=68932835500.00 diff=0.00
+2026-10-20 17:33:39,096 | refresh_mart | INFO | KPI order_count before=5600 after=5600 diff=0
+2026-10-20 17:33:39,096 | refresh_mart | INFO | KPI completed_orders before=4241 after=4241 diff=0
+2026-10-20 17:33:39,096 | refresh_mart | INFO | KPI total_items_sold before=18578 after=18578 diff=0
+2026-10-20 17:33:39,098 | refresh_mart | INFO | KPI comparison saved: C:\Users\MSI\AppData\Local\Temp\b8_mart_b7tt6dtv\docs\kpi_comparison.csv
+2026-10-20 17:33:39,098 | pipeline | INFO | [7/8] Làm mới Data Mart OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:39,098 | pipeline | INFO | [8/8] Cập nhật Checkpoint | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:39,109 | pipeline | INFO | [8/8] Cập nhật Checkpoint State OK | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4
+2026-10-20 17:33:39,114 | pipeline | INFO | Pipeline hoàn thành (exit 0) | run_id=02a7b379-b74a-48fa-9b67-dfe2c637f0d4 status=success
+2026-10-20 17:33:39,115 | mart_demo | INFO | Idempotency OK: all four replay diffs are zero
+2026-10-20 17:33:39,117 | mart_demo | INFO | Saved incremental comparison (before replay) to docs/kpi_comparison.csv; exit 0
+2026-10-20 17:33:39,153 | mart_demo | INFO | Dropped disposable database b8_mart_demo_3c753cfad610; configured Core/Mart/checkpoint unchanged
